@@ -1,19 +1,32 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:device_preview/device_preview.dart';
-import 'core/theme/app_theme.dart';
-import 'core/routing/app_router.dart';
-import 'core/error/error_handler.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+import 'core/error/error_handler.dart';
+import 'core/routing/app_router.dart';
+import 'core/theme/app_theme.dart';
+
+void main() async {
+  // Flutterバインディングの初期化
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ロケールデータの初期化（日本語）
+  await initializeDateFormatting('ja_JP', null);
+
   // グローバルエラーハンドラーを初期化
   GlobalErrorHandler.init();
-  
+
   runApp(
     ProviderScope(
       child: DevicePreview(
         enabled: !kReleaseMode, // 開発時のみ有効
+        defaultDevice: Devices.ios.iPadPro13InchesM4,
+        data: const DevicePreviewData(
+          orientation: Orientation.landscape,
+        ),
+        isToolbarVisible: true,
         builder: (context) => const MyApp(),
       ),
     ),
@@ -37,4 +50,3 @@ class MyApp extends ConsumerWidget {
     );
   }
 }
-
