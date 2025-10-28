@@ -23,14 +23,16 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       margin: margin ?? const EdgeInsets.all(8),
       child: Material(
         elevation: elevation ?? (isSelected ? 4 : 2),
         borderRadius: BorderRadius.circular(12),
-        color: backgroundColor ?? 
-               (isSelected ? colorScheme.primary.withOpacity(0.1) : colorScheme.surface),
+        color: backgroundColor ??
+            (isSelected
+                ? colorScheme.primary.withValues(alpha: 0.1)
+                : colorScheme.surface),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
@@ -93,7 +95,7 @@ class AppInfoCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.7),
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ),

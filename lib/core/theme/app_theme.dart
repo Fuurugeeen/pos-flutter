@@ -48,7 +48,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
         ),
         color: Colors.white,
-        shadowColor: _bloomDarkBrown.withOpacity(0.1),
+        shadowColor: _bloomDarkBrown.withValues(alpha: 0.1),
       ),
 
       // Button テーマ
@@ -105,7 +105,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: _bloomRose.withOpacity(0.5)),
+          borderSide: BorderSide(color: _bloomRose.withValues(alpha: 0.5)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -151,7 +151,7 @@ class AppTheme {
 
       // Divider テーマ
       dividerTheme: DividerThemeData(
-        color: _bloomRose.withOpacity(0.2),
+        color: _bloomRose.withValues(alpha: 0.2),
         thickness: 1,
       ),
 
@@ -241,10 +241,8 @@ class AppTheme {
       onSecondary: Colors.white,
       tertiary: _bloomGreen,
       onTertiary: _bloomDarkBrown,
-      surface: Color(0xFF2C2C2C),
+      surface: Color(0xFF1A1A1A),
       onSurface: Colors.white,
-      background: Color(0xFF1A1A1A),
-      onBackground: Colors.white,
       error: Color(0xFFCF6679),
       onError: Colors.black,
       outline: Color(0xFF444444),
@@ -277,7 +275,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: _bloomRose.withOpacity(0.5)),
+          borderSide: BorderSide(color: _bloomRose.withValues(alpha: 0.5)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
