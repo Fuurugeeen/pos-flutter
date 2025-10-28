@@ -55,7 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Future<void> _loadSettings() async {
-    final storage = LocalStorage();
+    final storage = await SharedPreferencesStorage.getInstance();
     
     _storeNameController.text = await storage.getString('store_name') ?? 'Café Bloom';
     _storeAddressController.text = await storage.getString('store_address') ?? '東京都渋谷区...';
@@ -545,7 +545,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   Future<void> _saveSettings() async {
     try {
-      final storage = LocalStorage();
+      final storage = await SharedPreferencesStorage.getInstance();
       
       await storage.setString('store_name', _storeNameController.text);
       await storage.setString('store_address', _storeAddressController.text);

@@ -29,7 +29,7 @@ class _SideNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentLocation = GoRouterState.of(context).location;
+    final currentLocation = GoRouterState.of(context).uri.toString();
     
     return Container(
       width: 240,
@@ -37,7 +37,7 @@ class _SideNavigation extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           right: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -129,13 +129,13 @@ class _SideNavigation extends StatelessWidget {
                 Icon(
                   Icons.info_outline,
                   size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'v1.0.0',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -171,7 +171,7 @@ class _NavItem extends StatelessWidget {
           icon,
           color: isSelected
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
         ),
         title: Text(
           label,
@@ -183,7 +183,7 @@ class _NavItem extends StatelessWidget {
           ),
         ),
         selected: isSelected,
-        selectedTileColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        selectedTileColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

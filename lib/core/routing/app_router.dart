@@ -93,7 +93,7 @@ class AppRouter {
             ),
             const SizedBox(height: 8),
             Text(
-              'パス: ${state.location}',
+              'パス: ${state.uri.toString()}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),

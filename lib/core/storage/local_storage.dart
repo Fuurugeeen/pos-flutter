@@ -8,6 +8,8 @@ abstract class LocalStorage {
   Future<int?> getInt(String key);
   Future<void> saveBool(String key, bool value);
   Future<bool?> getBool(String key);
+  Future<void> saveDouble(String key, double value);
+  Future<double?> getDouble(String key);
   Future<void> saveJson(String key, Map<String, dynamic> json);
   Future<Map<String, dynamic>?> getJson(String key);
   Future<void> saveJsonList(String key, List<Map<String, dynamic>> jsonList);
@@ -58,6 +60,16 @@ class SharedPreferencesStorage implements LocalStorage {
   @override
   Future<bool?> getBool(String key) async {
     return _prefs!.getBool(key);
+  }
+
+  @override
+  Future<void> saveDouble(String key, double value) async {
+    await _prefs!.setDouble(key, value);
+  }
+
+  @override
+  Future<double?> getDouble(String key) async {
+    return _prefs!.getDouble(key);
   }
 
   @override

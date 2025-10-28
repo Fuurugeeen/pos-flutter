@@ -3,14 +3,14 @@ import '../utils/result.dart';
 
 // バリデーションルール
 abstract class ValidationRule<T> {
-  const ValidationRule();
+  ValidationRule();
   
   Result<T> validate(T? value, String fieldName);
 }
 
 // 必須チェック
 class RequiredRule<T> extends ValidationRule<T> {
-  const RequiredRule();
+  RequiredRule();
   
   @override
   Result<T> validate(T? value, String fieldName) {
@@ -41,7 +41,7 @@ class StringLengthRule extends ValidationRule<String> {
   final int? minLength;
   final int? maxLength;
   
-  const StringLengthRule({this.minLength, this.maxLength});
+  StringLengthRule({this.minLength, this.maxLength});
   
   @override
   Result<String> validate(String? value, String fieldName) {
@@ -74,7 +74,7 @@ class NumberRangeRule extends ValidationRule<num> {
   final num? min;
   final num? max;
   
-  const NumberRangeRule({this.min, this.max});
+  NumberRangeRule({this.min, this.max});
   
   @override
   Result<num> validate(num? value, String fieldName) {
@@ -115,7 +115,7 @@ class EmailRule extends ValidationRule<String> {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
   
-  const EmailRule();
+  EmailRule();
   
   @override
   Result<String> validate(String? value, String fieldName) {
@@ -138,7 +138,7 @@ class EmailRule extends ValidationRule<String> {
 class PhoneRule extends ValidationRule<String> {
   static final RegExp _phoneRegex = RegExp(r'^[0-9\-\(\)\+\s]+$');
   
-  const PhoneRule();
+  PhoneRule();
   
   @override
   Result<String> validate(String? value, String fieldName) {
@@ -162,7 +162,7 @@ class CustomRule<T> extends ValidationRule<T> {
   final bool Function(T? value) predicate;
   final String errorMessage;
   
-  const CustomRule({
+  CustomRule({
     required this.predicate,
     required this.errorMessage,
   });
@@ -187,7 +187,7 @@ class Validator<T> {
   final List<ValidationRule<T>> _rules = [];
   
   Validator<T> required() {
-    _rules.add(const RequiredRule<T>());
+    _rules.add(RequiredRule<T>());
     return this;
   }
   
@@ -220,12 +220,12 @@ class StringValidator extends Validator<String> {
   }
   
   StringValidator email() {
-    addRule(const EmailRule());
+    addRule(EmailRule());
     return this;
   }
   
   StringValidator phone() {
-    addRule(const PhoneRule());
+    addRule(PhoneRule());
     return this;
   }
   
@@ -253,7 +253,7 @@ class NumberValidator extends Validator<num> {
   }
   
   NumberValidator positive() {
-    addRule(const NumberRangeRule(min: 0));
+    addRule(NumberRangeRule(min: 0));
     return this;
   }
   
@@ -311,7 +311,7 @@ class FormValidator {
 // よく使用されるバリデーターのファクトリー
 class Validators {
   // 商品名バリデーター
-  static StringValidator productName() {
+  static Validator<String> productName() {
     return StringValidator()
         .required()
         .minLength(1)
@@ -319,7 +319,7 @@ class Validators {
   }
   
   // 顧客名バリデーター
-  static StringValidator customerName() {
+  static Validator<String> customerName() {
     return StringValidator()
         .required()
         .minLength(1)
@@ -327,7 +327,7 @@ class Validators {
   }
   
   // 価格バリデーター
-  static NumberValidator price() {
+  static Validator<num> price() {
     return NumberValidator()
         .required()
         .min(0)
@@ -335,7 +335,7 @@ class Validators {
   }
   
   // 在庫数バリデーター
-  static NumberValidator stockQuantity() {
+  static Validator<num> stockQuantity() {
     return NumberValidator()
         .required()
         .min(0)
@@ -343,24 +343,24 @@ class Validators {
   }
   
   // メールアドレスバリデーター（任意）
-  static StringValidator optionalEmail() {
+  static Validator<String> optionalEmail() {
     return StringValidator().email();
   }
   
   // 電話番号バリデーター（任意）
-  static StringValidator optionalPhone() {
+  static Validator<String> optionalPhone() {
     return StringValidator().phone();
   }
   
   // 税率バリデーター
-  static NumberValidator taxRate() {
+  static Validator<num> taxRate() {
     return NumberValidator()
         .required()
         .range(0, 1);
   }
   
   // ポイントバリデーター
-  static NumberValidator loyaltyPoints() {
+  static Validator<num> loyaltyPoints() {
     return NumberValidator()
         .required()
         .min(0)

@@ -18,8 +18,6 @@ class AppTheme {
       onTertiary: _bloomDarkBrown,
       surface: Colors.white,
       onSurface: _bloomDarkBrown,
-      background: _bloomCream,
-      onBackground: _bloomDarkBrown,
       error: Color(0xFFB00020),
       onError: Colors.white,
       outline: Color(0xFFE0E0E0),

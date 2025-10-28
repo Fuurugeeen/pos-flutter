@@ -98,3 +98,33 @@ class PaymentError extends AppError {
     super.stackTrace,
   });
 }
+
+// リポジトリエラー
+class RepositoryError extends AppError {
+  const RepositoryError({
+    required super.message,
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
+}
+
+// 見つからないエラー
+class NotFoundError extends AppError {
+  const NotFoundError({
+    required super.message,
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
+}
+
+// ビジネスエラー
+class BusinessError extends AppError {
+  const BusinessError({
+    required super.message,
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
+}
