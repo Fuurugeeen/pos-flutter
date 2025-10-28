@@ -14,6 +14,8 @@ class Product {
   final TaxRate taxRate;
   final int stockQuantity;
   final int? lowStockThreshold;
+  final String? barcode;
+  final String? imageUrl;
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -27,6 +29,8 @@ class Product {
     required this.taxRate,
     required this.stockQuantity,
     this.lowStockThreshold,
+    this.barcode,
+    this.imageUrl,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
@@ -40,6 +44,8 @@ class Product {
     TaxRate taxRate = TaxRate.standard,
     int stockQuantity = 0,
     int? lowStockThreshold,
+    String? barcode,
+    String? imageUrl,
     bool isActive = true,
   }) {
     final now = DateTime.now();
@@ -52,6 +58,8 @@ class Product {
       taxRate: taxRate,
       stockQuantity: stockQuantity,
       lowStockThreshold: lowStockThreshold,
+      barcode: barcode,
+      imageUrl: imageUrl,
       isActive: isActive,
       createdAt: now,
       updatedAt: now,
@@ -70,6 +78,8 @@ class Product {
     TaxRate? taxRate,
     int? stockQuantity,
     int? lowStockThreshold,
+    String? barcode,
+    String? imageUrl,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -83,6 +93,8 @@ class Product {
       taxRate: taxRate ?? this.taxRate,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
+      barcode: barcode ?? this.barcode,
+      imageUrl: imageUrl ?? this.imageUrl,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -102,6 +114,8 @@ class Product {
           taxRate == other.taxRate &&
           stockQuantity == other.stockQuantity &&
           lowStockThreshold == other.lowStockThreshold &&
+          barcode == other.barcode &&
+          imageUrl == other.imageUrl &&
           isActive == other.isActive &&
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt;
@@ -116,6 +130,8 @@ class Product {
       taxRate.hashCode ^
       stockQuantity.hashCode ^
       lowStockThreshold.hashCode ^
+      barcode.hashCode ^
+      imageUrl.hashCode ^
       isActive.hashCode ^
       createdAt.hashCode ^
       updatedAt.hashCode;
