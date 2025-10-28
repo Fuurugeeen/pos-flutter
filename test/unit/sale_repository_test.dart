@@ -15,25 +15,33 @@ void main() {
     });
 
     test('should get all sales', () async {
-      final sales = await repository.getAllSales();
+      final result = await repository.getAllSales();
       
+      expect(result.isSuccess, true);
+      final sales = result.data!;
       expect(sales, isNotEmpty);
       expect(sales.length, 150);
     });
 
     test('should get sale by ID', () async {
-      final allSales = await repository.getAllSales();
+      final allSalesResult = await repository.getAllSales();
+      expect(allSalesResult.isSuccess, true);
+      final allSales = allSalesResult.data!;
       final firstSale = allSales.first;
       
-      final foundSale = await repository.getSaleById(firstSale.id);
+      final foundSaleResult = await repository.getSaleById(firstSale.id);
       
+      expect(foundSaleResult.isSuccess, true);
+      final foundSale = foundSaleResult.data;
       expect(foundSale, isNotNull);
       expect(foundSale!.id, firstSale.id);
     });
 
     test('should return null for non-existent sale ID', () async {
-      final foundSale = await repository.getSaleById('non-existent-id');
+      final result = await repository.getSaleById('non-existent-id');
       
+      expect(result.isSuccess, true);
+      final foundSale = result.data;
       expect(foundSale, isNull);
     });
 
@@ -41,8 +49,10 @@ void main() {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 7));
       
-      final salesInRange = await repository.getSalesByDateRange(startDate, endDate);
+      final result = await repository.getSalesByDateRange(startDate, endDate);
       
+      expect(result.isSuccess, true);
+      final salesInRange = result.data!;
       expect(salesInRange, isNotEmpty);
       expect(salesInRange.every((s) => 
         s.createdAt.isAfter(startDate.subtract(const Duration(days: 1))) &&
@@ -51,31 +61,41 @@ void main() {
     });
 
     test('should get sales by customer', () async {
-      final allSales = await repository.getAllSales();
+      final allSalesResult = await repository.getAllSales();
+      expect(allSalesResult.isSuccess, true);
+      final allSales = allSalesResult.data!;
       final saleWithCustomer = allSales.firstWhere((s) => s.customerId != null);
       
-      final customerSales = await repository.getSalesByCustomer(saleWithCustomer.customerId!);
+      final result = await repository.getSalesByCustomer(saleWithCustomer.customerId!);
       
+      expect(result.isSuccess, true);
+      final customerSales = result.data!;
       expect(customerSales, isNotEmpty);
       expect(customerSales.every((s) => s.customerId == saleWithCustomer.customerId), true);
     });
 
     test('should get sales by status', () async {
-      final completedSales = await repository.getSalesByStatus(SaleStatus.completed);
+      final result = await repository.getSalesByStatus(SaleStatus.completed);
       
+      expect(result.isSuccess, true);
+      final completedSales = result.data!;
       expect(completedSales, isNotEmpty);
       expect(completedSales.every((s) => s.status == SaleStatus.completed), true);
     });
 
     test('should get sales by payment method', () async {
-      final cashSales = await repository.getSalesByPaymentMethod(PaymentMethod.cash);
+      final result = await repository.getSalesByPaymentMethod(PaymentMethod.cash);
       
+      expect(result.isSuccess, true);
+      final cashSales = result.data!;
       expect(cashSales.every((s) => s.paymentMethod == PaymentMethod.cash), true);
     });
 
     test('should get today\'s sales', () async {
-      final todaysSales = await repository.getTodaysSales();
+      final result = await repository.getTodaysSales();
       
+      expect(result.isSuccess, true);
+      final todaysSales = result.data!;
       final today = DateTime.now();
       final startOfDay = DateTime(today.year, today.month, today.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
@@ -101,18 +121,24 @@ void main() {
         status: SaleStatus.pending,
       );
       
-      final createdSale = await repository.createSale(newSale);
+      final result = await repository.createSale(newSale);
       
+      expect(result.isSuccess, true);
+      final createdSale = result.data!;
       expect(createdSale.id, newSale.id);
       expect(createdSale.items.length, 1);
       
       // Verify it's in the repository
-      final foundSale = await repository.getSaleById(newSale.id);
+      final foundResult = await repository.getSaleById(newSale.id);
+      expect(foundResult.isSuccess, true);
+      final foundSale = foundResult.data;
       expect(foundSale, isNotNull);
     });
 
     test('should update existing sale', () async {
-      final allSales = await repository.getAllSales();
+      final allSalesResult = await repository.getAllSales();
+      expect(allSalesResult.isSuccess, true);
+      final allSales = allSalesResult.data!;
       final saleToUpdate = allSales.first;
       
       final updatedSale = saleToUpdate.copyWith(
@@ -122,12 +148,14 @@ void main() {
       
       final result = await repository.updateSale(updatedSale);
       
-      expect(result.notes, 'Updated notes');
-      expect(result.discountAmount, 50.0);
-      expect(result.updatedAt.isAfter(saleToUpdate.updatedAt), true);
+      expect(result.isSuccess, true);
+      final updatedResult = result.data!;
+      expect(updatedResult.notes, 'Updated notes');
+      expect(updatedResult.discountAmount, 50.0);
+      expect(updatedResult.updatedAt.isAfter(saleToUpdate.updatedAt), true);
     });
 
-    test('should throw when updating non-existent sale', () async {
+    test('should return failure when updating non-existent sale', () async {
       final product = Product.create(
         name: 'Test Product',
         description: 'Test',
@@ -141,43 +169,55 @@ void main() {
         paymentMethod: PaymentMethod.cash,
       );
       
-      expect(
-        () => repository.updateSale(nonExistentSale),
-        throwsException,
-      );
+      final result = await repository.updateSale(nonExistentSale);
+      expect(result.isFailure, true);
     });
 
     test('should complete sale', () async {
-      final allSales = await repository.getAllSales();
+      final allSalesResult = await repository.getAllSales();
+      expect(allSalesResult.isSuccess, true);
+      final allSales = allSalesResult.data!;
       final pendingSale = allSales.firstWhere((s) => s.status == SaleStatus.completed);
       
-      final completedSale = await repository.completeSale(pendingSale.id);
+      final result = await repository.completeSale(pendingSale.id);
       
+      expect(result.isSuccess, true);
+      final completedSale = result.data!;
       expect(completedSale.status, SaleStatus.completed);
     });
 
     test('should cancel sale', () async {
-      final allSales = await repository.getAllSales();
+      final allSalesResult = await repository.getAllSales();
+      expect(allSalesResult.isSuccess, true);
+      final allSales = allSalesResult.data!;
       final sale = allSales.first;
       
-      final cancelledSale = await repository.cancelSale(sale.id);
+      final result = await repository.cancelSale(sale.id);
       
+      expect(result.isSuccess, true);
+      final cancelledSale = result.data!;
       expect(cancelledSale.status, SaleStatus.cancelled);
     });
 
     test('should refund sale', () async {
-      final allSales = await repository.getAllSales();
+      final allSalesResult = await repository.getAllSales();
+      expect(allSalesResult.isSuccess, true);
+      final allSales = allSalesResult.data!;
       final sale = allSales.first;
       
-      final refundedSale = await repository.refundSale(sale.id);
+      final result = await repository.refundSale(sale.id);
       
+      expect(result.isSuccess, true);
+      final refundedSale = result.data!;
       expect(refundedSale.status, SaleStatus.refunded);
     });
 
     test('should get daily sales total', () async {
       final today = DateTime.now();
-      final total = await repository.getDailySalesTotal(today);
+      final result = await repository.getDailySalesTotal(today);
       
+      expect(result.isSuccess, true);
+      final total = result.data!;
       expect(total, greaterThanOrEqualTo(0.0));
     });
 
@@ -185,8 +225,10 @@ void main() {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 7));
       
-      final total = await repository.getSalesTotalByDateRange(startDate, endDate);
+      final result = await repository.getSalesTotalByDateRange(startDate, endDate);
       
+      expect(result.isSuccess, true);
+      final total = result.data!;
       expect(total, greaterThan(0.0));
     });
 
@@ -194,14 +236,18 @@ void main() {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 30));
       
-      final count = await repository.getSalesCountByDateRange(startDate, endDate);
+      final result = await repository.getSalesCountByDateRange(startDate, endDate);
       
+      expect(result.isSuccess, true);
+      final count = result.data!;
       expect(count, greaterThan(0));
     });
 
     test('should get top selling products', () async {
-      final topProducts = await repository.getTopSellingProducts(5, null, null);
+      final result = await repository.getTopSellingProducts(5, null, null);
       
+      expect(result.isSuccess, true);
+      final topProducts = result.data!;
       expect(topProducts, isNotEmpty);
       expect(topProducts.length, lessThanOrEqualTo(5));
       
@@ -216,8 +262,10 @@ void main() {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 7));
       
-      final topProducts = await repository.getTopSellingProducts(3, startDate, endDate);
+      final result = await repository.getTopSellingProducts(3, startDate, endDate);
       
+      expect(result.isSuccess, true);
+      final topProducts = result.data!;
       expect(topProducts.length, lessThanOrEqualTo(3));
     });
 
@@ -225,8 +273,10 @@ void main() {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 30));
       
-      final summary = await repository.getSalesByPaymentMethodSummary(startDate, endDate);
+      final result = await repository.getSalesByPaymentMethodSummary(startDate, endDate);
       
+      expect(result.isSuccess, true);
+      final summary = result.data!;
       expect(summary, isNotEmpty);
       expect(summary.containsKey(PaymentMethod.cash), true);
       expect(summary.containsKey(PaymentMethod.creditCard), true);
@@ -240,8 +290,10 @@ void main() {
 
     test('should get hourly sales', () async {
       final today = DateTime.now();
-      final hourlySales = await repository.getHourlySales(today);
+      final result = await repository.getHourlySales(today);
       
+      expect(result.isSuccess, true);
+      final hourlySales = result.data!;
       expect(hourlySales, isNotEmpty);
       expect(hourlySales.length, 24); // 24 hours
       
@@ -253,8 +305,10 @@ void main() {
     });
 
     test('should get average sale amount', () async {
-      final average = await repository.getAverageSaleAmount(null, null);
+      final result = await repository.getAverageSaleAmount(null, null);
       
+      expect(result.isSuccess, true);
+      final average = result.data!;
       expect(average, greaterThan(0.0));
     });
 
@@ -262,30 +316,26 @@ void main() {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 7));
       
-      final average = await repository.getAverageSaleAmount(startDate, endDate);
+      final result = await repository.getAverageSaleAmount(startDate, endDate);
       
+      expect(result.isSuccess, true);
+      final average = result.data!;
       expect(average, greaterThanOrEqualTo(0.0));
     });
 
-    test('should throw when completing non-existent sale', () async {
-      expect(
-        () => repository.completeSale('non-existent-id'),
-        throwsException,
-      );
+    test('should return failure when completing non-existent sale', () async {
+      final result = await repository.completeSale('non-existent-id');
+      expect(result.isFailure, true);
     });
 
-    test('should throw when cancelling non-existent sale', () async {
-      expect(
-        () => repository.cancelSale('non-existent-id'),
-        throwsException,
-      );
+    test('should return failure when cancelling non-existent sale', () async {
+      final result = await repository.cancelSale('non-existent-id');
+      expect(result.isFailure, true);
     });
 
-    test('should throw when refunding non-existent sale', () async {
-      expect(
-        () => repository.refundSale('non-existent-id'),
-        throwsException,
-      );
+    test('should return failure when refunding non-existent sale', () async {
+      final result = await repository.refundSale('non-existent-id');
+      expect(result.isFailure, true);
     });
   });
 }
