@@ -65,18 +65,19 @@ class _ProductEditScreenState extends ConsumerState<ProductEditScreen> {
     });
 
     try {
-      final product = await ref
+      final productResult = await ref
           .read(productRepositoryProvider)
           .getProductById(widget.productId!);
-      
-      if (product != null) {
+
+      if (productResult.isSuccess && productResult.data != null) {
+        final product = productResult.data!;
         setState(() {
           _existingProduct = product;
           _nameController.text = product.name;
-          _descriptionController.text = product.description ?? '';
+          _descriptionController.text = product.description;
           _priceController.text = product.price.toString();
           _stockQuantityController.text = product.stockQuantity.toString();
-          _lowStockThresholdController.text = product.lowStockThreshold.toString();
+          _lowStockThresholdController.text = product.lowStockThreshold?.toString() ?? '';
           _barcodeController.text = product.barcode ?? '';
           _imageUrlController.text = product.imageUrl ?? '';
           _selectedCategory = product.category;
@@ -158,7 +159,7 @@ class _ProductEditScreenState extends ConsumerState<ProductEditScreen> {
           Text(
             '商品ID: ${_existingProduct!.id}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -324,7 +325,7 @@ class _ProductEditScreenState extends ConsumerState<ProductEditScreen> {
           Text(
             '在庫数量が閾値以下になると「在庫少」として警告表示されます',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -371,7 +372,7 @@ class _ProductEditScreenState extends ConsumerState<ProductEditScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ClipRRect(
@@ -421,8 +422,10 @@ class _ProductEditScreenState extends ConsumerState<ProductEditScreen> {
     return switch (category) {
       ProductCategory.coffee => 'コーヒー',
       ProductCategory.tea => '紅茶',
-      ProductCategory.food => 'フード',
+      ProductCategory.pastry => 'ペストリー',
+      ProductCategory.sandwich => 'サンドイッチ',
       ProductCategory.dessert => 'デザート',
+      ProductCategory.beverage => '飲み物',
       ProductCategory.other => 'その他',
     };
   }
@@ -474,23 +477,27 @@ class _ProductEditScreenState extends ConsumerState<ProductEditScreen> {
         }
       } else {
         // Create new product
+        final now = DateTime.now();
         final newProduct = Product(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: _nameController.text.trim(),
-          description: _descriptionController.text.trim().isEmpty 
-              ? null 
+          description: _descriptionController.text.trim().isEmpty
+              ? ''
               : _descriptionController.text.trim(),
           price: price,
           category: _selectedCategory,
+          taxRate: TaxRate.standard,
           stockQuantity: stockQuantity,
           lowStockThreshold: lowStockThreshold,
-          barcode: _barcodeController.text.trim().isEmpty 
-              ? null 
+          barcode: _barcodeController.text.trim().isEmpty
+              ? null
               : _barcodeController.text.trim(),
-          imageUrl: _imageUrlController.text.trim().isEmpty 
-              ? null 
+          imageUrl: _imageUrlController.text.trim().isEmpty
+              ? null
               : _imageUrlController.text.trim(),
-          createdAt: DateTime.now(),
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
         );
         
         await ref

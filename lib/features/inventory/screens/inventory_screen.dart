@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/repository_providers.dart';
+import '../../../core/utils/result.dart';
 import '../../../data/models/product.dart';
 import '../../../data/models/enums.dart';
 import '../../../shared/components/app_card.dart';
@@ -238,17 +239,21 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
   Widget _buildInventoryStats() {
     final productRepository = ref.watch(productRepositoryProvider);
     
-    return FutureBuilder<List<Product>>(
+    return FutureBuilder<Result<List<Product>>>(
       future: productRepository.getAllProducts(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
         
-        final products = snapshot.data ?? [];
+        final productsResult = snapshot.data;
+        if (productsResult == null || !productsResult.isSuccess) {
+          return const SizedBox.shrink();
+        }
+        final products = productsResult.data!;
         final totalItems = products.fold<int>(0, (sum, p) => sum + p.stockQuantity);
         final totalValue = products.fold<double>(0, (sum, p) => sum + (p.price * p.stockQuantity));
-        final lowStockCount = products.where((p) => p.stockQuantity <= p.lowStockThreshold && p.stockQuantity > 0).length;
+        final lowStockCount = products.where((p) => p.stockQuantity <= (p.lowStockThreshold ?? 0) && p.stockQuantity > 0).length;
         final outOfStockCount = products.where((p) => p.stockQuantity <= 0).length;
         
         return Row(
@@ -310,7 +315,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
             child: Text(
               '該当する商品がありません',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           );
@@ -323,7 +328,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -358,7 +363,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
   }
 
   Widget _buildInventoryRow(Product product) {
-    final isLowStock = product.stockQuantity <= product.lowStockThreshold && product.stockQuantity > 0;
+    final isLowStock = product.stockQuantity <= (product.lowStockThreshold ?? 0) && product.stockQuantity > 0;
     final isOutOfStock = product.stockQuantity <= 0;
     
     return Container(
@@ -366,7 +371,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -384,7 +389,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
                 Text(
                   currencyFormatter.format(product.price),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -418,10 +423,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isOutOfStock
-                    ? Colors.red.withOpacity(0.1)
+                    ? Colors.red.withValues(alpha: 0.1)
                     : isLowStock
-                        ? Colors.orange.withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
+                        ? Colors.orange.withValues(alpha: 0.1)
+                        : Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -531,7 +536,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
     
     switch (_stockFilter) {
       case 'low_stock':
-        products = products.where((p) => p.stockQuantity <= p.lowStockThreshold && p.stockQuantity > 0).toList();
+        products = products.where((p) => p.stockQuantity <= (p.lowStockThreshold ?? 0) && p.stockQuantity > 0).toList();
         break;
       case 'out_of_stock':
         products = products.where((p) => p.stockQuantity <= 0).toList();
@@ -545,8 +550,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
     return switch (category) {
       ProductCategory.coffee => 'コーヒー',
       ProductCategory.tea => '紅茶',
-      ProductCategory.food => 'フード',
+      ProductCategory.pastry => 'ペストリー',
+      ProductCategory.sandwich => 'サンドイッチ',
       ProductCategory.dessert => 'デザート',
+      ProductCategory.beverage => '飲み物',
       ProductCategory.other => 'その他',
     };
   }
@@ -564,7 +571,12 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
     
     if (product == null) {
       // Show product selection dialog first
-      final products = await ref.read(productRepositoryProvider).getAllProducts();
+      final productsResult = await ref.read(productRepositoryProvider).getAllProducts();
+      if (!productsResult.isSuccess || productsResult.data == null) return;
+
+      final products = productsResult.data!;
+      if (!mounted) return;
+
       selectedProduct = await showDialog<Product>(
         context: context,
         builder: (context) => AlertDialog(
@@ -586,10 +598,12 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
           ),
         ),
       );
-      
+
       if (selectedProduct == null) return;
     }
-    
+
+    if (!mounted) return;
+
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AlertDialog(
@@ -597,7 +611,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('現在在庫: ${selectedProduct!.stockQuantity}個'),
+            Text('現在在庫: ${selectedProduct.stockQuantity}個'),
             const SizedBox(height: 16),
             AppFormField(
               label: '${isIncrease ? '入庫' : '出庫'}数量',
@@ -650,9 +664,14 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
   }
 
   Future<void> _showBulkStockDialog({required bool isIncrease}) async {
-    final products = await ref.read(productRepositoryProvider).getAllProducts();
+    final productsResult = await ref.read(productRepositoryProvider).getAllProducts();
+    if (!productsResult.isSuccess || productsResult.data == null) return;
+
+    final products = productsResult.data!;
     final selectedProducts = <Product, int>{};
-    
+
+    if (!mounted) return;
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(

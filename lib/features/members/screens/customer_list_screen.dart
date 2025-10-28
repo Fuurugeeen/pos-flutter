@@ -112,14 +112,19 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           },
         ),
         const SizedBox(height: 16),
-        FutureBuilder<List<Customer>>(
+        FutureBuilder<Result<List<Customer>>>(
           future: customerRepository.getAllCustomers(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox.shrink();
             }
-            
-            final customers = snapshot.data ?? [];
+
+            final customersResult = snapshot.data;
+            if (customersResult == null || !customersResult.isSuccess) {
+              return const SizedBox.shrink();
+            }
+
+            final customers = customersResult.data!;
             final totalCustomers = customers.length;
             final totalLoyaltyPoints = customers.fold<int>(
               0, 
@@ -165,17 +170,22 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
   Widget _buildCustomerList() {
     final customerRepository = ref.watch(customerRepositoryProvider);
-    
-    return FutureBuilder<List<Customer>>(
-      future: searchQuery.isEmpty 
+
+    return FutureBuilder<Result<List<Customer>>>(
+      future: searchQuery.isEmpty
         ? customerRepository.getAllCustomers()
         : customerRepository.searchCustomers(searchQuery),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
-        final customers = snapshot.data ?? [];
+
+        final customersResult = snapshot.data;
+        if (customersResult == null || !customersResult.isSuccess) {
+          return const Center(child: Text('エラーが発生しました'));
+        }
+
+        final customers = customersResult.data!;
         
         if (customers.isEmpty) {
           return Center(
@@ -185,13 +195,13 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 Icon(
                   searchQuery.isEmpty ? Icons.person_off : Icons.search_off,
                   size: 64,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   searchQuery.isEmpty ? '顧客データがありません' : '検索結果が見つかりません',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 if (searchQuery.isEmpty) ...[
@@ -214,7 +224,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -252,7 +262,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -271,7 +281,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   Text(
                     customer.email!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
               ],
@@ -282,13 +292,13 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (customer.phoneNumber != null)
-                  Text(customer.phoneNumber!),
+                if (customer.phone != null)
+                  Text(customer.phone!),
                 if (customer.address != null)
                   Text(
                     customer.address!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -301,7 +311,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -391,8 +401,19 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
   Future<void> _exportCustomers() async {
     try {
-      final customers = await ref.read(customerRepositoryProvider).getAllCustomers();
-      
+      final customersResult = await ref.read(customerRepositoryProvider).getAllCustomers();
+
+      if (!customersResult.isSuccess || customersResult.data == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('顧客データの取得に失敗しました')),
+          );
+        }
+        return;
+      }
+
+      final customers = customersResult.data!;
+
       // In a real app, you would implement CSV export functionality here
       // For now, we'll just show a success message
       if (mounted) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/repository_providers.dart';
+import '../../../core/utils/result.dart';
 import '../../../data/models/product.dart';
 import '../../../data/models/enums.dart';
 import '../../../shared/components/app_card.dart';
@@ -161,17 +162,22 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
   Widget _buildStats() {
     final productRepository = ref.watch(productRepositoryProvider);
-    
-    return FutureBuilder<List<Product>>(
+
+    return FutureBuilder(
       future: productRepository.getAllProducts(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        
-        final products = snapshot.data ?? [];
+
+        final result = snapshot.data;
+        if (result == null) {
+          return const SizedBox.shrink();
+        }
+
+        final products = result.isSuccess ? (result.data ?? []) : <Product>[];
         final totalProducts = products.length;
-        final lowStockProducts = products.where((p) => p.stockQuantity <= p.lowStockThreshold).length;
+        final lowStockProducts = products.where((p) => p.stockQuantity <= (p.lowStockThreshold ?? 0)).length;
         final outOfStockProducts = products.where((p) => p.stockQuantity <= 0).length;
         final totalValue = products.fold<double>(
           0, 
@@ -222,15 +228,20 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
   Widget _buildProductList() {
     final productRepository = ref.watch(productRepositoryProvider);
-    
-    return FutureBuilder<List<Product>>(
+
+    return FutureBuilder(
       future: _getFilteredProducts(productRepository),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
-        final products = snapshot.data ?? [];
+
+        final result = snapshot.data;
+        if (result == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final products = result.isSuccess ? (result.data ?? []) : <Product>[];
         
         if (products.isEmpty) {
           return Center(
@@ -242,7 +253,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       ? Icons.inventory_2
                       : Icons.search_off,
                   size: 64,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -250,7 +261,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       ? '商品データがありません'
                       : '検索結果が見つかりません',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 if (searchQuery.isEmpty && selectedCategory == null) ...[
@@ -273,7 +284,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -308,7 +319,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   }
 
   Widget _buildProductRow(Product product) {
-    final isLowStock = product.stockQuantity <= product.lowStockThreshold;
+    final isLowStock = product.stockQuantity <= (product.lowStockThreshold ?? 0);
     final isOutOfStock = product.stockQuantity <= 0;
     
     return Container(
@@ -316,7 +327,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -326,7 +337,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: product.imageUrl != null
@@ -356,11 +367,11 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                   product.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                if (product.description?.isNotEmpty == true)
+                if (product.description.isNotEmpty)
                   Text(
-                    product.description!,
+                    product.description,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -399,10 +410,10 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isOutOfStock
-                    ? Colors.red.withOpacity(0.1)
+                    ? Colors.red.withValues(alpha: 0.1)
                     : isLowStock
-                        ? Colors.orange.withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
+                        ? Colors.orange.withValues(alpha: 0.1)
+                        : Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -446,28 +457,41 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     );
   }
 
-  Future<List<Product>> _getFilteredProducts(dynamic productRepository) async {
-    List<Product> products;
-    
+  Future<Result<List<Product>>> _getFilteredProducts(dynamic productRepository) async {
+    List<Product> products = [];
+
     if (searchQuery.isEmpty) {
-      products = await productRepository.getAllProducts();
+      final result = await productRepository.getAllProducts();
+      if (result.isSuccess) {
+        products = result.data ?? [];
+      } else {
+        return result; // Return the error result
+      }
     } else {
-      products = await productRepository.searchProducts(searchQuery);
+      final result = await productRepository.searchProducts(searchQuery);
+      if (result.isSuccess) {
+        products = result.data ?? [];
+      } else {
+        return result; // Return the error result
+      }
     }
-    
+
     if (selectedCategory != null) {
       products = products.where((p) => p.category == selectedCategory).toList();
     }
-    
-    return products;
+
+    // Return a success result with the filtered products
+    return Result.success(products);
   }
 
   String _getCategoryDisplayName(ProductCategory category) {
     return switch (category) {
       ProductCategory.coffee => 'コーヒー',
       ProductCategory.tea => '紅茶',
-      ProductCategory.food => 'フード',
+      ProductCategory.pastry => 'ペストリー',
+      ProductCategory.sandwich => 'サンドイッチ',
       ProductCategory.dessert => 'デザート',
+      ProductCategory.beverage => '飲み物',
       ProductCategory.other => 'その他',
     };
   }
@@ -519,14 +543,27 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
   Future<void> _exportProducts() async {
     try {
-      final products = await ref.read(productRepositoryProvider).getAllProducts();
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${products.length}件の商品データをエクスポートしました'),
-          ),
-        );
+      final result = await ref.read(productRepositoryProvider).getAllProducts();
+
+      if (result.isSuccess) {
+        final products = result.data ?? [];
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${products.length}件の商品データをエクスポートしました'),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          final errorMessage = result.error != null ? result.error.toString() : "不明なエラー";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('エクスポートに失敗しました: $errorMessage'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

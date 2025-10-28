@@ -55,16 +55,17 @@ class _CustomerEditScreenState extends ConsumerState<CustomerEditScreen> {
     });
 
     try {
-      final customer = await ref
+      final customerResult = await ref
           .read(customerRepositoryProvider)
           .getCustomerById(widget.customerId!);
-      
-      if (customer != null) {
+
+      if (customerResult.isSuccess && customerResult.data != null) {
+        final customer = customerResult.data!;
         setState(() {
           _existingCustomer = customer;
           _nameController.text = customer.name;
           _emailController.text = customer.email ?? '';
-          _phoneController.text = customer.phoneNumber ?? '';
+          _phoneController.text = customer.phone ?? '';
           _addressController.text = customer.address ?? '';
           _loyaltyPointsController.text = customer.loyaltyPoints.toString();
         });
@@ -143,7 +144,7 @@ class _CustomerEditScreenState extends ConsumerState<CustomerEditScreen> {
           Text(
             '顧客ID: ${_existingCustomer!.id}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -272,7 +273,7 @@ class _CustomerEditScreenState extends ConsumerState<CustomerEditScreen> {
           Text(
             'ポイントは手動で調整できます。通常は購入時に自動で付与されます。',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -324,7 +325,7 @@ class _CustomerEditScreenState extends ConsumerState<CustomerEditScreen> {
           email: _emailController.text.trim().isEmpty 
               ? null 
               : _emailController.text.trim(),
-          phoneNumber: _phoneController.text.trim().isEmpty 
+          phone: _phoneController.text.trim().isEmpty 
               ? null 
               : _phoneController.text.trim(),
           address: _addressController.text.trim().isEmpty 
@@ -347,22 +348,20 @@ class _CustomerEditScreenState extends ConsumerState<CustomerEditScreen> {
         }
       } else {
         // Create new customer
-        final newCustomer = Customer(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+        final newCustomer = Customer.create(
           name: _nameController.text.trim(),
-          email: _emailController.text.trim().isEmpty 
-              ? null 
+          email: _emailController.text.trim().isEmpty
+              ? null
               : _emailController.text.trim(),
-          phoneNumber: _phoneController.text.trim().isEmpty 
-              ? null 
+          phone: _phoneController.text.trim().isEmpty
+              ? null
               : _phoneController.text.trim(),
-          address: _addressController.text.trim().isEmpty 
-              ? null 
+          address: _addressController.text.trim().isEmpty
+              ? null
               : _addressController.text.trim(),
           loyaltyPoints: loyaltyPoints,
-          createdAt: DateTime.now(),
         );
-        
+
         await ref
             .read(customerRepositoryProvider)
             .createCustomer(newCustomer);

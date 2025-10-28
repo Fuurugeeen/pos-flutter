@@ -7,6 +7,7 @@ import '../../../data/models/product.dart';
 import '../../../data/models/customer.dart';
 import '../../../data/models/sale.dart';
 import '../../../data/models/sale_item.dart';
+import '../../../data/models/enums.dart';
 import '../../../shared/components/app_card.dart';
 import '../../../shared/components/app_button.dart';
 import '../../../shared/components/app_form_field.dart';
@@ -72,7 +73,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
       decoration: BoxDecoration(
         border: Border(
           right: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -108,17 +109,22 @@ class _PosScreenState extends ConsumerState<PosScreen> {
 
   Widget _buildProductGrid() {
     final productRepository = ref.watch(productRepositoryProvider);
-    
-    return FutureBuilder<List<Product>>(
-      future: searchQuery.isEmpty 
+
+    return FutureBuilder(
+      future: searchQuery.isEmpty
         ? productRepository.getAllProducts()
         : productRepository.searchProducts(searchQuery),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
-        final products = snapshot.data ?? [];
+
+        final productsResult = snapshot.data;
+        if (productsResult == null || !productsResult.isSuccess) {
+          return const Center(child: Text('商品の読み込みに失敗しました'));
+        }
+
+        final products = productsResult.data ?? [];
         
         if (products.isEmpty) {
           return Center(
@@ -128,13 +134,13 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                 Icon(
                   Icons.search_off,
                   size: 64,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   '商品が見つかりません',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -171,7 +177,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: product.imageUrl != null
@@ -226,7 +232,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             Text(
               '在庫: ${product.stockQuantity}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
         ],
@@ -341,8 +347,8 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     );
   }
 
-  Widget _buildCartItems(Map<String, int> cart, dynamic cartNotifier) {
-    if (cart.isEmpty) {
+  Widget _buildCartItems(Sale cart, dynamic cartNotifier) {
+    if (cart.items.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -350,47 +356,30 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             Icon(
               Icons.shopping_cart_outlined,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 16),
             Text(
               'カートが空です',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
         ),
       );
     }
-    
-    return FutureBuilder<List<Product>>(
-      future: ref.read(productRepositoryProvider).getAllProducts(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        
-        final products = snapshot.data ?? [];
-        final productMap = {for (var p in products) p.id: p};
-        
-        return ListView.builder(
-          itemCount: cart.length,
-          itemBuilder: (context, index) {
-            final productId = cart.keys.elementAt(index);
-            final quantity = cart[productId]!;
-            final product = productMap[productId];
-            
-            if (product == null) return const SizedBox.shrink();
-            
-            return _buildCartItem(product, quantity, cartNotifier);
-          },
-        );
+
+    return ListView.builder(
+      itemCount: cart.items.length,
+      itemBuilder: (context, index) {
+        final item = cart.items[index];
+        return _buildCartItemFromSaleItem(item, cartNotifier);
       },
     );
   }
 
-  Widget _buildCartItem(Product product, int quantity, dynamic cartNotifier) {
+  Widget _buildCartItemFromSaleItem(SaleItem item, dynamic cartNotifier) {
     return AppCard(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -401,11 +390,11 @@ class _PosScreenState extends ConsumerState<PosScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.name,
+                  item.productName,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  currencyFormatter.format(product.price),
+                  currencyFormatter.format(item.unitPrice),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -417,22 +406,28 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.remove),
-                onPressed: () => cartNotifier.decreaseQuantity(product.id),
+                onPressed: () {
+                  if (item.quantity > 1) {
+                    cartNotifier.updateItemQuantity(item.productId, item.quantity - 1);
+                  } else {
+                    cartNotifier.removeItem(item.productId);
+                  }
+                },
               ),
               Text(
-                '$quantity',
+                '${item.quantity}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               IconButton(
                 icon: const Icon(Icons.add),
-                onPressed: () => cartNotifier.addToCart(product.id),
+                onPressed: () => cartNotifier.updateItemQuantity(item.productId, item.quantity + 1),
               ),
             ],
           ),
           SizedBox(
             width: 80,
             child: Text(
-              currencyFormatter.format(product.price * quantity),
+              currencyFormatter.format(item.subtotal),
               style: const TextStyle(fontWeight: FontWeight.bold),
               textAlign: TextAlign.right,
             ),
@@ -442,85 +437,75 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     );
   }
 
-  Widget _buildCartSummary(Map<String, int> cart) {
-    return FutureBuilder<List<Product>>(
-      future: ref.read(productRepositoryProvider).getAllProducts(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox.shrink();
-        }
-        
-        final products = snapshot.data ?? [];
-        final productMap = {for (var p in products) p.id: p};
-        
-        double subtotal = 0;
-        for (final entry in cart.entries) {
-          final product = productMap[entry.key];
-          if (product != null) {
-            subtotal += product.price * entry.value;
-          }
-        }
-        
-        final taxAmount = subtotal * 0.1; // 10% tax
-        final total = subtotal + taxAmount;
-        
-        return AppCard(
-          child: Column(
+  Widget _buildCartSummary(Sale cart) {
+    return AppCard(
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('小計'),
-                  Text(currencyFormatter.format(subtotal)),
-                ],
+              const Text('小計'),
+              Text(currencyFormatter.format(cart.subtotal)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('税額'),
+              Text(currencyFormatter.format(cart.totalTax)),
+            ],
+          ),
+          if (cart.discountAmount > 0) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('割引'),
+                Text(
+                  '-${currencyFormatter.format(cart.discountAmount)}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ),
+          ],
+          const Divider(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '合計',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('税額 (10%)'),
-                  Text(currencyFormatter.format(taxAmount)),
-                ],
-              ),
-              const Divider(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '合計',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    currencyFormatter.format(total),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ],
+              Text(
+                currencyFormatter.format(cart.finalTotal),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildCheckoutButton(Map<String, int> cart) {
+  Widget _buildCheckoutButton(Sale cart) {
     return AppButton(
       text: isProcessingPayment ? '処理中...' : '決済',
       icon: Icons.payment,
       isFullWidth: true,
       isLoading: isProcessingPayment,
-      onPressed: cart.isEmpty || isProcessingPayment ? null : () => _processCheckout(),
+      onPressed: cart.items.isEmpty || isProcessingPayment ? null : () => _processCheckout(),
     );
   }
 
   void _addToCart(Product product) {
-    ref.read(cartProvider.notifier).addToCart(product.id);
-    
+    ref.read(cartProvider.notifier).addItem(product);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${product.name} をカートに追加しました'),
@@ -544,11 +529,11 @@ class _PosScreenState extends ConsumerState<PosScreen> {
       });
       return;
     }
-    
-    final customers = await ref.read(customerRepositoryProvider).searchCustomers(query);
-    if (customers.isNotEmpty) {
+
+    final customersResult = await ref.read(customerRepositoryProvider).searchCustomers(query);
+    if (customersResult.isSuccess && customersResult.data != null && customersResult.data!.isNotEmpty) {
       setState(() {
-        selectedCustomer = customers.first;
+        selectedCustomer = customersResult.data!.first;
       });
     }
   }
@@ -557,72 +542,54 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     setState(() {
       isProcessingPayment = true;
     });
-    
+
     try {
       final cart = ref.read(cartProvider);
-      final products = await ref.read(productRepositoryProvider).getAllProducts();
-      final productMap = {for (var p in products) p.id: p};
-      
-      final saleItems = <SaleItem>[];
-      double subtotal = 0;
-      
-      for (final entry in cart.entries) {
-        final product = productMap[entry.key];
-        if (product != null) {
-          final saleItem = SaleItem(
-            productId: product.id,
-            productName: product.name,
-            unitPrice: product.price,
-            quantity: entry.value,
-          );
-          saleItems.add(saleItem);
-          subtotal += saleItem.totalPrice;
-        }
-      }
-      
-      final sale = Sale(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+
+      // Use the completed sale with customer info
+      final completedSale = cart.copyWith(
         customerId: selectedCustomer?.id,
         customerName: selectedCustomer?.name,
-        items: saleItems,
-        subtotal: subtotal,
-        taxAmount: subtotal * 0.1,
-        totalAmount: subtotal * 1.1,
-        paymentMethod: 'cash',
-        createdAt: DateTime.now(),
+        status: SaleStatus.completed,
+        updatedAt: DateTime.now(),
       );
-      
-      await ref.read(saleRepositoryProvider).createSale(sale);
-      
+
+      await ref.read(saleRepositoryProvider).createSale(completedSale);
+
       // Update stock quantities
-      for (final entry in cart.entries) {
-        final product = productMap[entry.key];
-        if (product != null) {
-          final updatedProduct = product.copyWith(
-            stockQuantity: product.stockQuantity - entry.value,
-          );
-          await ref.read(productRepositoryProvider).updateProduct(updatedProduct);
+      final productsResult = await ref.read(productRepositoryProvider).getAllProducts();
+      if (productsResult.isSuccess && productsResult.data != null) {
+        final productMap = {for (var p in productsResult.data!) p.id: p};
+
+        for (final item in cart.items) {
+          final product = productMap[item.productId];
+          if (product != null) {
+            final updatedProduct = product.copyWith(
+              stockQuantity: product.stockQuantity - item.quantity,
+            );
+            await ref.read(productRepositoryProvider).updateProduct(updatedProduct);
+          }
         }
       }
-      
+
       // Update customer loyalty points
       if (selectedCustomer != null) {
-        final pointsEarned = (sale.totalAmount / 100).floor();
+        final pointsEarned = (completedSale.finalTotal / 100).floor();
         final updatedCustomer = selectedCustomer!.copyWith(
           loyaltyPoints: selectedCustomer!.loyaltyPoints + pointsEarned,
         );
         await ref.read(customerRepositoryProvider).updateCustomer(updatedCustomer);
       }
-      
+
       // Clear cart
       ref.read(cartProvider.notifier).clearCart();
       setState(() {
         selectedCustomer = null;
         customerSearchController.clear();
       });
-      
+
       if (mounted) {
-        _showCheckoutSuccess(sale);
+        _showCheckoutSuccess(completedSale);
       }
     } catch (e) {
       if (mounted) {
@@ -653,9 +620,9 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             Text('決済が完了しました。'),
             const SizedBox(height: 16),
             Text('レシート番号: ${sale.id}'),
-            Text('合計金額: ${currencyFormatter.format(sale.totalAmount)}'),
+            Text('合計金額: ${currencyFormatter.format(sale.finalTotal)}'),
             if (selectedCustomer != null)
-              Text('獲得ポイント: ${(sale.totalAmount / 100).floor()}pt'),
+              Text('獲得ポイント: ${(sale.finalTotal / 100).floor()}pt'),
           ],
         ),
         actions: [

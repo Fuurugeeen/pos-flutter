@@ -7,7 +7,6 @@ import '../../../data/models/product.dart';
 import '../../../data/models/customer.dart';
 import '../../../shared/components/app_card.dart';
 import '../../../shared/components/app_button.dart';
-import '../../../shared/components/app_form_field.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -96,7 +95,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
 
   Widget _buildSalesTab() {
     final saleRepository = ref.watch(saleRepositoryProvider);
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -104,14 +103,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         children: [
           _buildDateRangeHeader(),
           const SizedBox(height: 24),
-          FutureBuilder<List<Sale>>(
-            future: saleRepository.getSalesInRange(_startDate, _endDate),
+          FutureBuilder(
+            future: saleRepository.getSalesByDateRange(_startDate, _endDate),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
-              final sales = snapshot.data ?? [];
+
+              final result = snapshot.data;
+              if (result == null) {
+                return const Center(child: Text('データがありません'));
+              }
+
+              final sales = result.isSuccess ? (result.data ?? []) : <Sale>[];
               return Column(
                 children: [
                   _buildSalesStats(sales),
@@ -129,7 +133,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
   Widget _buildProductsTab() {
     final saleRepository = ref.watch(saleRepositoryProvider);
     final productRepository = ref.watch(productRepositoryProvider);
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -137,22 +141,32 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         children: [
           _buildDateRangeHeader(),
           const SizedBox(height: 24),
-          FutureBuilder<List<Sale>>(
-            future: saleRepository.getSalesInRange(_startDate, _endDate),
+          FutureBuilder(
+            future: saleRepository.getSalesByDateRange(_startDate, _endDate),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
-              final sales = snapshot.data ?? [];
-              return FutureBuilder<List<Product>>(
+
+              final salesResult = snapshot.data;
+              if (salesResult == null) {
+                return const Center(child: Text('データがありません'));
+              }
+
+              final sales = salesResult.isSuccess ? (salesResult.data ?? []) : <Sale>[];
+              return FutureBuilder(
                 future: productRepository.getAllProducts(),
                 builder: (context, productSnapshot) {
                   if (productSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  
-                  final products = productSnapshot.data ?? [];
+
+                  final productsResult = productSnapshot.data;
+                  if (productsResult == null) {
+                    return const Center(child: Text('データがありません'));
+                  }
+
+                  final products = productsResult.isSuccess ? (productsResult.data ?? []) : <Product>[];
                   return _buildProductAnalysis(sales, products);
                 },
               );
@@ -166,7 +180,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
   Widget _buildCustomersTab() {
     final saleRepository = ref.watch(saleRepositoryProvider);
     final customerRepository = ref.watch(customerRepositoryProvider);
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -174,22 +188,32 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         children: [
           _buildDateRangeHeader(),
           const SizedBox(height: 24),
-          FutureBuilder<List<Sale>>(
-            future: saleRepository.getSalesInRange(_startDate, _endDate),
+          FutureBuilder(
+            future: saleRepository.getSalesByDateRange(_startDate, _endDate),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
-              final sales = snapshot.data ?? [];
-              return FutureBuilder<List<Customer>>(
+
+              final salesResult = snapshot.data;
+              if (salesResult == null) {
+                return const Center(child: Text('データがありません'));
+              }
+
+              final sales = salesResult.isSuccess ? (salesResult.data ?? []) : <Sale>[];
+              return FutureBuilder(
                 future: customerRepository.getAllCustomers(),
                 builder: (context, customerSnapshot) {
                   if (customerSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  
-                  final customers = customerSnapshot.data ?? [];
+
+                  final customersResult = customerSnapshot.data;
+                  if (customersResult == null) {
+                    return const Center(child: Text('データがありません'));
+                  }
+
+                  final customers = customersResult.isSuccess ? (customersResult.data ?? []) : <Customer>[];
                   return _buildCustomerAnalysis(sales, customers);
                 },
               );
@@ -229,16 +253,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
 
   Widget _buildOverviewStats() {
     final saleRepository = ref.watch(saleRepositoryProvider);
-    
-    return FutureBuilder<List<Sale>>(
-      future: saleRepository.getSalesInRange(_startDate, _endDate),
+
+    return FutureBuilder(
+      future: saleRepository.getSalesByDateRange(_startDate, _endDate),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
-        final sales = snapshot.data ?? [];
-        final totalSales = sales.fold<double>(0, (sum, sale) => sum + sale.totalAmount);
+
+        final result = snapshot.data;
+        if (result == null) {
+          return const SizedBox.shrink();
+        }
+
+        final sales = result.isSuccess ? (result.data ?? []) : <Sale>[];
+        final totalSales = sales.fold<double>(0, (sum, sale) => sum + sale.finalTotal);
         final totalOrders = sales.length;
         final avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0.0;
         final days = _endDate.difference(_startDate).inDays + 1;
@@ -300,7 +329,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
             height: 200,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Center(
@@ -318,23 +347,28 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
 
   Widget _buildTopProducts() {
     final saleRepository = ref.watch(saleRepositoryProvider);
-    
-    return FutureBuilder<List<Sale>>(
-      future: saleRepository.getSalesInRange(_startDate, _endDate),
+
+    return FutureBuilder(
+      future: saleRepository.getSalesByDateRange(_startDate, _endDate),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        
-        final sales = snapshot.data ?? [];
+
+        final result = snapshot.data;
+        if (result == null) {
+          return const SizedBox.shrink();
+        }
+
+        final sales = result.isSuccess ? (result.data ?? []) : <Sale>[];
         final productSales = <String, double>{};
         final productQuantities = <String, int>{};
         
         for (final sale in sales) {
           for (final item in sale.items) {
-            productSales[item.productName] = 
-                (productSales[item.productName] ?? 0) + item.totalPrice;
-            productQuantities[item.productName] = 
+            productSales[item.productName] =
+                (productSales[item.productName] ?? 0) + item.total;
+            productQuantities[item.productName] =
                 (productQuantities[item.productName] ?? 0) + item.quantity;
           }
         }
@@ -389,7 +423,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       hourlyStats[hour] = (hourlyStats[hour] ?? 0) + 1;
       
       final day = dateFormatter.format(sale.createdAt);
-      dailyStats[day] = (dailyStats[day] ?? 0) + sale.totalAmount;
+      dailyStats[day] = (dailyStats[day] ?? 0) + sale.finalTotal;
     }
     
     final peakHour = hourlyStats.entries.isEmpty 
@@ -404,7 +438,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         Expanded(
           child: AppInfoCard(
             title: 'ピーク時間',
-            value: '${peakHour}時台',
+            value: '$peakHour時台',
             icon: Icons.schedule,
             iconColor: Colors.blue,
           ),
@@ -443,7 +477,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -469,7 +503,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
                       ),
                     ),
                   ),
@@ -486,7 +520,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
                       ),
                       Expanded(
                         child: Text(
-                          currencyFormatter.format(sale.totalAmount),
+                          currencyFormatter.format(sale.finalTotal),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -518,7 +552,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       for (final item in sale.items) {
         if (productStats.containsKey(item.productName)) {
           productStats[item.productName]!['quantity'] += item.quantity;
-          productStats[item.productName]!['revenue'] += item.totalPrice;
+          productStats[item.productName]!['revenue'] += item.total;
         }
       }
     }
@@ -608,14 +642,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       }
       
       customerStats[customerName]!['orders']++;
-      customerStats[customerName]!['revenue'] += sale.totalAmount;
+      customerStats[customerName]!['revenue'] += sale.finalTotal;
       customerStats[customerName]!['items'] += sale.items.fold<int>(0, (sum, item) => sum + item.quantity);
     }
     
     final sortedCustomers = customerStats.entries.toList()
       ..sort((a, b) => (b.value['revenue'] as double).compareTo(a.value['revenue'] as double));
-    
-    final totalRevenue = sales.fold<double>(0, (sum, sale) => sum + sale.totalAmount);
+
     final registeredCustomerSales = sales.where((s) => s.customerName != null).length;
     final guestSales = sales.length - registeredCustomerSales;
     

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../data/models/sale.dart';
+import '../../../core/utils/result.dart';
 import '../../../shared/components/app_card.dart';
 import '../../../shared/components/app_button.dart';
 import 'package:go_router/go_router.dart';
@@ -67,7 +68,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Text(
               dateFormatter.format(selectedDate),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -131,8 +132,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildTodaysStats() {
     final saleRepository = ref.watch(saleRepositoryProvider);
     
-    return FutureBuilder<List<Sale>>(
-      future: saleRepository.getSalesInRange(
+    return FutureBuilder<Result<List<Sale>>>(
+      future: saleRepository.getSalesByDateRange(
         DateTime(selectedDate.year, selectedDate.month, selectedDate.day),
         DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59),
       ),
@@ -141,8 +142,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         
-        final sales = snapshot.data ?? [];
-        final totalSales = sales.fold<double>(0, (sum, sale) => sum + sale.totalAmount);
+        final salesResult = snapshot.data;
+        if (salesResult == null || !salesResult.isSuccess) {
+          return const Center(child: Text('データの取得に失敗しました'));
+        }
+        final sales = salesResult.data!;
+        final totalSales = sales.fold<double>(0, (sum, sale) => sum + sale.finalTotal);
         final totalOrders = sales.length;
         final avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0.0;
         
@@ -193,14 +198,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildRecentSales() {
     final saleRepository = ref.watch(saleRepositoryProvider);
     
-    return FutureBuilder<List<Sale>>(
-      future: saleRepository.getRecentSales(10),
+    return FutureBuilder<Result<List<Sale>>>(
+      future: saleRepository.getTodaysSales(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         
-        final sales = snapshot.data ?? [];
+        final salesResult = snapshot.data;
+        if (salesResult == null || !salesResult.isSuccess) {
+          return const Center(child: Text('データの取得に失敗しました'));
+        }
+        final sales = salesResult.data!.take(10).toList();
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +237,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
@@ -268,7 +277,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -282,7 +291,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           Expanded(
             child: Text(
-              currencyFormatter.format(sale.totalAmount),
+              currencyFormatter.format(sale.finalTotal),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -324,13 +333,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Text('顧客: ${sale.customerName ?? 'ゲスト'}'),
             Text('商品数: ${sale.items.length}個'),
             Text('小計: ${currencyFormatter.format(sale.subtotal)}'),
-            Text('税額: ${currencyFormatter.format(sale.taxAmount)}'),
-            Text('合計: ${currencyFormatter.format(sale.totalAmount)}'),
+            Text('税額: ${currencyFormatter.format(sale.totalTax)}'),
+            Text('合計: ${currencyFormatter.format(sale.finalTotal)}'),
             const SizedBox(height: 16),
             const Text('商品明細:', style: TextStyle(fontWeight: FontWeight.bold)),
             ...sale.items.map((item) => Padding(
               padding: const EdgeInsets.only(left: 16, top: 4),
-              child: Text('${item.productName} x ${item.quantity} = ${currencyFormatter.format(item.totalPrice)}'),
+              child: Text('${item.productName} x ${item.quantity} = ${currencyFormatter.format(item.total)}'),
             )),
           ],
         ),
