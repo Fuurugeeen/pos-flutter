@@ -8,7 +8,6 @@ import 'mock_product_repository.dart';
 import 'mock_customer_repository.dart';
 import '../../core/error/app_error.dart';
 import '../../core/utils/result.dart';
-import '../../core/validation/validators.dart';
 
 class MockSaleRepository implements SaleRepository {
   final List<Sale> _sales = [];
