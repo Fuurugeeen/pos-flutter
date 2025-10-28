@@ -3,7 +3,7 @@
 ## フェーズ1: プロジェクト基盤構築 (1-2日)
 
 ### 1.1 依存関係とプロジェクト設定
-- [ ] **必要な依存関係の追加** (1時間)
+- [x] **必要な依存関係の追加** (1時間)
   - riverpod, flutter_riverpod (状態管理)
   - go_router (ルーティング)
   - shared_preferences (ローカルストレージ)
@@ -14,7 +14,7 @@
   - **コミット**: "Add required dependencies for POS system"
 
 ### 1.2 プロジェクト構造の作成
-- [ ] **基本ディレクトリ構造の作成** (30分)
+- [x] **基本ディレクトリ構造の作成** (30分)
   - lib/features/ (機能別フォルダ)
   - lib/shared/ (共通コンポーネント)
   - lib/core/ (コア機能)
@@ -23,19 +23,19 @@
   - **コミット**: "Create project directory structure"
 
 ### 1.3 コア機能とモデルの実装
-- [ ] **エンティティモデルの作成** (2時間)
+- [x] **エンティティモデルの作成** (2時間)
   - Product (商品), Customer (顧客), Sale (売上), SaleItem (売上明細)
   - Enums: ProductCategory, PaymentMethod, TaxRate
   - **テスト**: モデルのunit test (JSON変換、コピー、等価性)
   - **コミット**: "Implement core entity models with tests"
 
-- [ ] **Repository インターフェースの定義** (1時間)
+- [x] **Repository インターフェースの定義** (1時間)
   - ProductRepository, CustomerRepository, SaleRepository
   - **テスト**: インターフェース実装のmock test
   - **コミット**: "Define repository interfaces"
 
 ### 1.4 状態管理の設定
-- [ ] **Riverpodプロバイダーの基本設定** (1時間)
+- [x] **Riverpodプロバイダーの基本設定** (1時間)
   - プロバイダー構成ファイル作成
   - **テスト**: プロバイダーのunit test
   - **コミット**: "Setup Riverpod state management"
@@ -43,19 +43,19 @@
 ## フェーズ2: データレイヤー実装 (2-3日)
 
 ### 2.1 モック用リポジトリ実装
-- [ ] **MockProductRepository の実装** (2時間)
+- [x] **MockProductRepository の実装** (2時間)
   - サンプルデータ30件の作成
   - CRUD操作の実装
   - **テスト**: 全CRUD操作のunit test
   - **コミット**: "Implement MockProductRepository with sample data"
 
-- [ ] **MockCustomerRepository の実装** (2時間)
+- [x] **MockCustomerRepository の実装** (2時間)
   - サンプル顧客データ20件の作成
   - 検索機能の実装
   - **テスト**: 検索・CRUD操作のunit test
   - **コミット**: "Implement MockCustomerRepository with search"
 
-- [ ] **MockSaleRepository の実装** (2時間)
+- [x] **MockSaleRepository の実装** (2時間)
   - 過去30日分の売上データ生成
   - 集計機能の実装
   - **テスト**: データ生成・集計のunit test
