@@ -3,6 +3,8 @@ import '../../data/repositories/product_repository.dart';
 import '../../data/repositories/customer_repository.dart';
 import '../../data/repositories/sale_repository.dart';
 import '../../data/repositories/mock_product_repository.dart';
+import '../../data/repositories/mock_customer_repository.dart';
+import '../../data/repositories/mock_sale_repository.dart';
 
 // Repository providers
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
@@ -10,11 +12,9 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
 });
 
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
-  // TODO: Replace with actual implementation when available
-  throw UnimplementedError('CustomerRepository not yet implemented');
+  return MockCustomerRepository();
 });
 
 final saleRepositoryProvider = Provider<SaleRepository>((ref) {
-  // TODO: Replace with actual implementation when available
-  throw UnimplementedError('SaleRepository not yet implemented');
+  return MockSaleRepository();
 });

@@ -3,7 +3,9 @@
     "allow": [
       "Bash(tree:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: プロジェクト構造とディレクトリを作成\n\n- lib/配下に機能別ディレクトリを作成\n  - core: テーマ、定数、共通ウィジェット\n  - data: モデル、リポジトリ\n  - features: 各機能（auth, dashboard, pos等）\n  - utils: ユーティリティ\n- test/配下に対応するテストディレクトリを作成\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: プロジェクト構造とディレクトリを作成\n\n- lib/配下に機能別ディレクトリを作成\n  - core: テーマ、定数、共通ウィジェット\n  - data: モデル、リポジトリ\n  - features: 各機能（auth, dashboard, pos等）\n  - utils: ユーティリティ\n- test/配下に対応するテストディレクトリを作成\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(flutter pub get:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

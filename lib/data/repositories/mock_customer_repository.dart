@@ -1,5 +1,8 @@
 import '../models/customer.dart';
 import 'customer_repository.dart';
+import '../../core/error/app_error.dart';
+import '../../core/utils/result.dart';
+import '../../core/validation/validators.dart';
 
 class MockCustomerRepository implements CustomerRepository {
   final List<Customer> _customers = [];
@@ -177,129 +180,324 @@ class MockCustomerRepository implements CustomerRepository {
   }
 
   @override
-  Future<List<Customer>> getAllCustomers() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return List.from(_customers);
-  }
-
-  @override
-  Future<Customer?> getCustomerById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 50));
+  Future<Result<List<Customer>>> getAllCustomers() async {
     try {
-      return _customers.firstWhere((c) => c.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future<List<Customer>> searchCustomers(String query) async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    final lowerQuery = query.toLowerCase();
-    return _customers.where((c) => 
-      c.name.toLowerCase().contains(lowerQuery) ||
-      (c.email?.toLowerCase().contains(lowerQuery) ?? false) ||
-      (c.phone?.contains(query) ?? false)
-    ).toList();
-  }
-
-  @override
-  Future<List<Customer>> getCustomersWithPoints(int minPoints) async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return _customers.where((c) => c.loyaltyPoints >= minPoints).toList();
-  }
-
-  @override
-  Future<List<Customer>> getActiveCustomers() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return _customers.where((c) => c.isActive).toList();
-  }
-
-  @override
-  Future<Customer> createCustomer(Customer customer) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    _customers.add(customer);
-    return customer;
-  }
-
-  @override
-  Future<Customer> updateCustomer(Customer customer) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _customers.indexWhere((c) => c.id == customer.id);
-    if (index != -1) {
-      _customers[index] = customer.copyWith(updatedAt: DateTime.now());
-      return _customers[index];
-    }
-    throw Exception('Customer not found');
-  }
-
-  @override
-  Future<void> deleteCustomer(String id) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _customers.indexWhere((c) => c.id == id);
-    if (index != -1) {
-      _customers[index] = _customers[index].copyWith(
-        isActive: false,
-        updatedAt: DateTime.now(),
+      await Future.delayed(const Duration(milliseconds: 100));
+      return Result.success(List.from(_customers));
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '顧客リストの取得に失敗しました',
+          originalError: error,
+        ),
       );
     }
   }
 
   @override
-  Future<Customer> addLoyaltyPoints(String customerId, int points) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final index = _customers.indexWhere((c) => c.id == customerId);
-    if (index != -1) {
-      _customers[index] = _customers[index].addPoints(points);
-      return _customers[index];
-    }
-    throw Exception('Customer not found');
-  }
-
-  @override
-  Future<Customer> subtractLoyaltyPoints(String customerId, int points) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final index = _customers.indexWhere((c) => c.id == customerId);
-    if (index != -1) {
-      _customers[index] = _customers[index].subtractPoints(points);
-      return _customers[index];
-    }
-    throw Exception('Customer not found');
-  }
-
-  @override
-  Future<Customer?> getCustomerByPhone(String phone) async {
-    await Future.delayed(const Duration(milliseconds: 50));
+  Future<Result<Customer?>> getCustomerById(String id) async {
     try {
-      return _customers.firstWhere((c) => c.phone == phone);
-    } catch (e) {
-      return null;
+      await Future.delayed(const Duration(milliseconds: 50));
+      final customer = _customers.where((c) => c.id == id).firstOrNull;
+      return Result.success(customer);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '顧客の取得に失敗しました',
+          originalError: error,
+        ),
+      );
     }
   }
 
   @override
-  Future<Customer?> getCustomerByEmail(String email) async {
-    await Future.delayed(const Duration(milliseconds: 50));
+  Future<Result<List<Customer>>> searchCustomers(String query) async {
     try {
-      return _customers.firstWhere((c) => c.email == email);
-    } catch (e) {
-      return null;
+      await Future.delayed(const Duration(milliseconds: 100));
+      final lowerQuery = query.toLowerCase();
+      final results = _customers.where((c) => 
+        c.name.toLowerCase().contains(lowerQuery) ||
+        (c.email?.toLowerCase().contains(lowerQuery) ?? false) ||
+        (c.phone?.contains(query) ?? false)
+      ).toList();
+      return Result.success(results);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '顧客検索に失敗しました',
+          originalError: error,
+        ),
+      );
     }
   }
 
   @override
-  Future<int> getTotalCustomerCount() async {
-    await Future.delayed(const Duration(milliseconds: 50));
-    return _customers.where((c) => c.isActive).length;
+  Future<Result<List<Customer>>> getCustomersWithPoints(int minPoints) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      return Result.success(_customers.where((c) => c.loyaltyPoints >= minPoints).toList());
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: 'ポイントフィルターに失敗しました',
+          originalError: error,
+        ),
+      );
+    }
   }
 
   @override
-  Future<List<Customer>> getBirthdayCustomers() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    final now = DateTime.now();
-    return _customers.where((c) => 
-      c.dateOfBirth?.month == now.month &&
-      c.isActive
-    ).toList();
+  Future<Result<List<Customer>>> getActiveCustomers() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      return Result.success(_customers.where((c) => c.isActive).toList());
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '有効な顧客の取得に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Customer>> createCustomer(Customer customer) async {
+    try {
+      // バリデーション
+      final nameValidation = Validators.customerName().validate(customer.name, '顧客名');
+      if (nameValidation.isFailure) {
+        return Result.failure(nameValidation.error!);
+      }
+      
+      if (customer.email != null && customer.email!.isNotEmpty) {
+        final emailValidation = Validators.optionalEmail().validate(customer.email, 'メールアドレス');
+        if (emailValidation.isFailure) {
+          return Result.failure(emailValidation.error!);
+        }
+      }
+      
+      if (customer.phone != null && customer.phone!.isNotEmpty) {
+        final phoneValidation = Validators.optionalPhone().validate(customer.phone, '電話番号');
+        if (phoneValidation.isFailure) {
+          return Result.failure(phoneValidation.error!);
+        }
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 200));
+      _customers.add(customer);
+      return Result.success(customer);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '顧客の作成に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Customer>> updateCustomer(Customer customer) async {
+    try {
+      // バリデーション
+      final nameValidation = Validators.customerName().validate(customer.name, '顧客名');
+      if (nameValidation.isFailure) {
+        return Result.failure(nameValidation.error!);
+      }
+      
+      if (customer.email != null && customer.email!.isNotEmpty) {
+        final emailValidation = Validators.optionalEmail().validate(customer.email, 'メールアドレス');
+        if (emailValidation.isFailure) {
+          return Result.failure(emailValidation.error!);
+        }
+      }
+      
+      if (customer.phone != null && customer.phone!.isNotEmpty) {
+        final phoneValidation = Validators.optionalPhone().validate(customer.phone, '電話番号');
+        if (phoneValidation.isFailure) {
+          return Result.failure(phoneValidation.error!);
+        }
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 200));
+      final index = _customers.indexWhere((c) => c.id == customer.id);
+      if (index != -1) {
+        _customers[index] = customer.copyWith(updatedAt: DateTime.now());
+        return Result.success(_customers[index]);
+      }
+      return Result.failure(
+        NotFoundError(message: '顧客が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '顧客の更新に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteCustomer(String id) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 200));
+      final index = _customers.indexWhere((c) => c.id == id);
+      if (index != -1) {
+        _customers[index] = _customers[index].copyWith(
+          isActive: false,
+          updatedAt: DateTime.now(),
+        );
+        return Result.success(null);
+      }
+      return Result.failure(
+        NotFoundError(message: '顧客が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '顧客の削除に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Customer>> addLoyaltyPoints(String customerId, int points) async {
+    try {
+      if (points < 0) {
+        return Result.failure(
+          ValidationError(
+            message: '追加ポイントは0以上である必要があります',
+            fieldErrors: {'points': '追加ポイントは0以上である必要があります'},
+          ),
+        );
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 150));
+      final index = _customers.indexWhere((c) => c.id == customerId);
+      if (index != -1) {
+        _customers[index] = _customers[index].addPoints(points);
+        return Result.success(_customers[index]);
+      }
+      return Result.failure(
+        NotFoundError(message: '顧客が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: 'ポイントの追加に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Customer>> subtractLoyaltyPoints(String customerId, int points) async {
+    try {
+      if (points < 0) {
+        return Result.failure(
+          ValidationError(
+            message: '減算ポイントは0以上である必要があります',
+            fieldErrors: {'points': '減算ポイントは0以上である必要があります'},
+          ),
+        );
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 150));
+      final index = _customers.indexWhere((c) => c.id == customerId);
+      if (index != -1) {
+        final customer = _customers[index];
+        if (customer.loyaltyPoints < points) {
+          return Result.failure(
+            BusinessError(
+              message: 'ポイントが不足しています。現在のポイント: ${customer.loyaltyPoints}, 必要ポイント: $points',
+            ),
+          );
+        }
+        _customers[index] = customer.subtractPoints(points);
+        return Result.success(_customers[index]);
+      }
+      return Result.failure(
+        NotFoundError(message: '顧客が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: 'ポイントの減算に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Customer?>> getCustomerByPhone(String phone) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 50));
+      final customer = _customers.where((c) => c.phone == phone).firstOrNull;
+      return Result.success(customer);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '電話番号での顧客検索に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Customer?>> getCustomerByEmail(String email) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 50));
+      final customer = _customers.where((c) => c.email == email).firstOrNull;
+      return Result.success(customer);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: 'メールアドレスでの顧客検索に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<int>> getTotalCustomerCount() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 50));
+      return Result.success(_customers.where((c) => c.isActive).length);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '顧客数の取得に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<List<Customer>>> getBirthdayCustomers() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      final now = DateTime.now();
+      final results = _customers.where((c) => 
+        c.dateOfBirth?.month == now.month &&
+        c.isActive
+      ).toList();
+      return Result.success(results);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '誕生日顧客の取得に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
   }
 }

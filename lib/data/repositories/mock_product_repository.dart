@@ -1,6 +1,9 @@
 import '../models/product.dart';
 import '../models/enums.dart';
 import 'product_repository.dart';
+import '../../core/error/app_error.dart';
+import '../../core/utils/result.dart';
+import '../../core/validation/validators.dart';
 
 class MockProductRepository implements ProductRepository {
   final List<Product> _products = [];
@@ -213,117 +216,279 @@ class MockProductRepository implements ProductRepository {
   }
 
   @override
-  Future<List<Product>> getAllProducts() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return List.from(_products);
-  }
-
-  @override
-  Future<List<Product>> getProductsByCategory(ProductCategory category) async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return _products.where((p) => p.category == category).toList();
-  }
-
-  @override
-  Future<Product?> getProductById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 50));
+  Future<Result<List<Product>>> getAllProducts() async {
     try {
-      return _products.firstWhere((p) => p.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future<List<Product>> searchProducts(String query) async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    final lowerQuery = query.toLowerCase();
-    return _products.where((p) => 
-      p.name.toLowerCase().contains(lowerQuery) ||
-      p.description.toLowerCase().contains(lowerQuery)
-    ).toList();
-  }
-
-  @override
-  Future<List<Product>> getActiveProducts() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return _products.where((p) => p.isActive).toList();
-  }
-
-  @override
-  Future<List<Product>> getLowStockProducts() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return _products.where((p) => p.isLowStock).toList();
-  }
-
-  @override
-  Future<Product> createProduct(Product product) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    _products.add(product);
-    return product;
-  }
-
-  @override
-  Future<Product> updateProduct(Product product) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _products.indexWhere((p) => p.id == product.id);
-    if (index != -1) {
-      _products[index] = product.copyWith(updatedAt: DateTime.now());
-      return _products[index];
-    }
-    throw Exception('Product not found');
-  }
-
-  @override
-  Future<void> deleteProduct(String id) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _products.indexWhere((p) => p.id == id);
-    if (index != -1) {
-      _products[index] = _products[index].copyWith(
-        isActive: false,
-        updatedAt: DateTime.now(),
+      await Future.delayed(const Duration(milliseconds: 100));
+      return Result.success(List.from(_products));
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '商品リストの取得に失敗しました',
+          originalError: error,
+        ),
       );
     }
   }
 
   @override
-  Future<Product> updateStock(String id, int newQuantity) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final index = _products.indexWhere((p) => p.id == id);
-    if (index != -1) {
-      _products[index] = _products[index].copyWith(
-        stockQuantity: newQuantity,
-        updatedAt: DateTime.now(),
+  Future<Result<List<Product>>> getProductsByCategory(ProductCategory category) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      return Result.success(_products.where((p) => p.category == category).toList());
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: 'カテゴリ商品の取得に失敗しました',
+          originalError: error,
+        ),
       );
-      return _products[index];
     }
-    throw Exception('Product not found');
   }
 
   @override
-  Future<Product> reduceStock(String id, int quantity) async {
-    await Future.delayed(const Duration(milliseconds: 150));
-    final index = _products.indexWhere((p) => p.id == id);
-    if (index != -1) {
-      final newQuantity = (_products[index].stockQuantity - quantity).clamp(0, double.infinity).toInt();
-      _products[index] = _products[index].copyWith(
-        stockQuantity: newQuantity,
-        updatedAt: DateTime.now(),
+  Future<Result<Product?>> getProductById(String id) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 50));
+      final product = _products.where((p) => p.id == id).firstOrNull;
+      return Result.success(product);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '商品の取得に失敗しました',
+          originalError: error,
+        ),
       );
-      return _products[index];
     }
-    throw Exception('Product not found');
   }
 
   @override
-  Future<Map<ProductCategory, int>> getProductCountByCategory() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    final countMap = <ProductCategory, int>{};
-    
-    for (final category in ProductCategory.values) {
-      countMap[category] = _products.where((p) => p.category == category && p.isActive).length;
+  Future<Result<List<Product>>> searchProducts(String query) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      final lowerQuery = query.toLowerCase();
+      final results = _products.where((p) => 
+        p.name.toLowerCase().contains(lowerQuery) ||
+        p.description.toLowerCase().contains(lowerQuery)
+      ).toList();
+      return Result.success(results);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '商品検索に失敗しました',
+          originalError: error,
+        ),
+      );
     }
-    
-    return countMap;
+  }
+
+  @override
+  Future<Result<List<Product>>> getActiveProducts() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      return Result.success(_products.where((p) => p.isActive).toList());
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '有効な商品の取得に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<List<Product>>> getLowStockProducts() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      return Result.success(_products.where((p) => p.isLowStock).toList());
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '在庫不足商品の取得に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Product>> createProduct(Product product) async {
+    try {
+      // バリデーション
+      final nameValidation = Validators.productName().validate(product.name, '商品名');
+      if (nameValidation.isFailure) {
+        return Result.failure(nameValidation.error!);
+      }
+      
+      final priceValidation = Validators.price().validate(product.price, '価格');
+      if (priceValidation.isFailure) {
+        return Result.failure(priceValidation.error!);
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 200));
+      _products.add(product);
+      return Result.success(product);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '商品の作成に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Product>> updateProduct(Product product) async {
+    try {
+      // バリデーション
+      final nameValidation = Validators.productName().validate(product.name, '商品名');
+      if (nameValidation.isFailure) {
+        return Result.failure(nameValidation.error!);
+      }
+      
+      final priceValidation = Validators.price().validate(product.price, '価格');
+      if (priceValidation.isFailure) {
+        return Result.failure(priceValidation.error!);
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 200));
+      final index = _products.indexWhere((p) => p.id == product.id);
+      if (index != -1) {
+        _products[index] = product.copyWith(updatedAt: DateTime.now());
+        return Result.success(_products[index]);
+      }
+      return Result.failure(
+        NotFoundError(message: '商品が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '商品の更新に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteProduct(String id) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 200));
+      final index = _products.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _products[index] = _products[index].copyWith(
+          isActive: false,
+          updatedAt: DateTime.now(),
+        );
+        return Result.success(null);
+      }
+      return Result.failure(
+        NotFoundError(message: '商品が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '商品の削除に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Product>> updateStock(String id, int newQuantity) async {
+    try {
+      // バリデーション
+      final stockValidation = Validators.stockQuantity().validate(newQuantity, '在庫数');
+      if (stockValidation.isFailure) {
+        return Result.failure(stockValidation.error!);
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 150));
+      final index = _products.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _products[index] = _products[index].copyWith(
+          stockQuantity: newQuantity,
+          updatedAt: DateTime.now(),
+        );
+        return Result.success(_products[index]);
+      }
+      return Result.failure(
+        NotFoundError(message: '商品が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '在庫の更新に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Product>> reduceStock(String id, int quantity) async {
+    try {
+      if (quantity < 0) {
+        return Result.failure(
+          ValidationError(
+            message: '減少数量は0以上である必要があります',
+            fieldErrors: {'quantity': '減少数量は0以上である必要があります'},
+          ),
+        );
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 150));
+      final index = _products.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        final currentStock = _products[index].stockQuantity;
+        if (currentStock < quantity) {
+          return Result.failure(
+            BusinessError(
+              message: '在庫が不足しています。現在の在庫: $currentStock, 必要数量: $quantity',
+            ),
+          );
+        }
+        
+        final newQuantity = (currentStock - quantity).clamp(0, double.infinity).toInt();
+        _products[index] = _products[index].copyWith(
+          stockQuantity: newQuantity,
+          updatedAt: DateTime.now(),
+        );
+        return Result.success(_products[index]);
+      }
+      return Result.failure(
+        NotFoundError(message: '商品が見つかりません'),
+      );
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: '在庫の減少に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Map<ProductCategory, int>>> getProductCountByCategory() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 100));
+      final countMap = <ProductCategory, int>{};
+      
+      for (final category in ProductCategory.values) {
+        countMap[category] = _products.where((p) => p.category == category && p.isActive).length;
+      }
+      
+      return Result.success(countMap);
+    } catch (error) {
+      return Result.failure(
+        RepositoryError(
+          message: 'カテゴリ別商品数の取得に失敗しました',
+          originalError: error,
+        ),
+      );
+    }
   }
 }
