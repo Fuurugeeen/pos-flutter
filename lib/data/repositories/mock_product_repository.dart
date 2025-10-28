@@ -9,6 +9,9 @@ class MockProductRepository implements ProductRepository {
     _initializeSampleData();
   }
 
+  // Getter for accessing products synchronously (for testing and initialization)
+  List<Product> get products => List.from(_products);
+
   void _initializeSampleData() {
     _products.addAll([
       // Coffee products
