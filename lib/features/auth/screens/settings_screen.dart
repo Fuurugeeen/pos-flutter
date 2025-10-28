@@ -290,7 +290,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   value: _selectedCurrency,
                   items: const [
                     DropdownMenuItem(value: 'JPY', child: Text('日本円 (¥)')),
-                    DropdownMenuItem(value: 'USD', child: Text('US Dollar ($)')),
+                    DropdownMenuItem(value: 'USD', child: Text('US Dollar (\$)')),
                     DropdownMenuItem(value: 'EUR', child: Text('Euro (€)')),
                   ],
                   onChanged: (value) {
@@ -547,21 +547,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     try {
       final storage = await SharedPreferencesStorage.getInstance();
       
-      await storage.setString('store_name', _storeNameController.text);
-      await storage.setString('store_address', _storeAddressController.text);
-      await storage.setString('store_phone', _storePhoneController.text);
-      await storage.setDouble('tax_rate', double.tryParse(_taxRateController.text) ?? 0.1);
+      await storage.saveString('store_name', _storeNameController.text);
+      await storage.saveString('store_address', _storeAddressController.text);
+      await storage.saveString('store_phone', _storePhoneController.text);
+      await storage.saveDouble('tax_rate', double.tryParse(_taxRateController.text) ?? 0.1);
       
-      await storage.setBool('enable_notifications', _enableNotifications);
-      await storage.setBool('enable_auto_backup', _enableAutoBackup);
-      await storage.setBool('enable_loyalty_program', _enableLoyaltyProgram);
-      await storage.setString('language', _selectedLanguage);
-      await storage.setString('currency', _selectedCurrency);
+      await storage.saveBool('enable_notifications', _enableNotifications);
+      await storage.saveBool('enable_auto_backup', _enableAutoBackup);
+      await storage.saveBool('enable_loyalty_program', _enableLoyaltyProgram);
+      await storage.saveString('language', _selectedLanguage);
+      await storage.saveString('currency', _selectedCurrency);
       
-      await storage.setString('receipt_header', _receiptHeaderController.text);
-      await storage.setString('receipt_footer', _receiptFooterController.text);
-      await storage.setBool('print_receipts', _printReceipts);
-      await storage.setBool('email_receipts', _emailReceipts);
+      await storage.saveString('receipt_header', _receiptHeaderController.text);
+      await storage.saveString('receipt_footer', _receiptFooterController.text);
+      await storage.saveBool('print_receipts', _printReceipts);
+      await storage.saveBool('email_receipts', _emailReceipts);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

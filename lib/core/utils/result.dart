@@ -57,6 +57,7 @@ abstract class Result<T> {
 
 // 成功の実装
 class Success<T> extends Result<T> {
+  @override
   final T data;
   
   const Success(this.data);
@@ -76,6 +77,7 @@ class Success<T> extends Result<T> {
 
 // 失敗の実装
 class Failure<T> extends Result<T> {
+  @override
   final Exception error;
   
   const Failure(this.error);

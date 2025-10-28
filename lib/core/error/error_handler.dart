@@ -25,21 +25,21 @@ class ErrorHandler {
   // エラーメッセージを取得
   static String _getErrorMessage(AppError error) {
     switch (error.runtimeType) {
-      case NetworkError:
+      case NetworkError _:
         return _getNetworkErrorMessage(error);
-      case DatabaseError:
+      case DatabaseError _:
         return _getDatabaseErrorMessage(error);
-      case ValidationError:
+      case ValidationError _:
         return _getValidationErrorMessage(error as ValidationError);
-      case BusinessLogicError:
+      case BusinessLogicError _:
         return _getBusinessLogicErrorMessage(error);
-      case AuthenticationError:
+      case AuthenticationError _:
         return _getAuthenticationErrorMessage(error);
-      case InventoryError:
+      case InventoryError _:
         return _getInventoryErrorMessage(error);
-      case PaymentError:
+      case PaymentError _:
         return _getPaymentErrorMessage(error);
-      case SystemError:
+      case SystemError _:
       default:
         return error.message;
     }

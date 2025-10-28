@@ -209,6 +209,12 @@ class Validator<T> {
 
 // 文字列用バリデーター
 class StringValidator extends Validator<String> {
+  @override
+  StringValidator required() {
+    _rules.add(RequiredRule<String>());
+    return this;
+  }
+  
   StringValidator minLength(int length) {
     addRule(StringLengthRule(minLength: length));
     return this;
@@ -237,6 +243,12 @@ class StringValidator extends Validator<String> {
 
 // 数値用バリデーター
 class NumberValidator extends Validator<num> {
+  @override
+  NumberValidator required() {
+    _rules.add(RequiredRule<num>());
+    return this;
+  }
+  
   NumberValidator min(num value) {
     addRule(NumberRangeRule(min: value));
     return this;
@@ -311,7 +323,7 @@ class FormValidator {
 // よく使用されるバリデーターのファクトリー
 class Validators {
   // 商品名バリデーター
-  static Validator<String> productName() {
+  static StringValidator productName() {
     return StringValidator()
         .required()
         .minLength(1)
@@ -319,7 +331,7 @@ class Validators {
   }
   
   // 顧客名バリデーター
-  static Validator<String> customerName() {
+  static StringValidator customerName() {
     return StringValidator()
         .required()
         .minLength(1)
@@ -327,7 +339,7 @@ class Validators {
   }
   
   // 価格バリデーター
-  static Validator<num> price() {
+  static NumberValidator price() {
     return NumberValidator()
         .required()
         .min(0)
@@ -335,7 +347,7 @@ class Validators {
   }
   
   // 在庫数バリデーター
-  static Validator<num> stockQuantity() {
+  static NumberValidator stockQuantity() {
     return NumberValidator()
         .required()
         .min(0)
@@ -343,24 +355,24 @@ class Validators {
   }
   
   // メールアドレスバリデーター（任意）
-  static Validator<String> optionalEmail() {
+  static StringValidator optionalEmail() {
     return StringValidator().email();
   }
   
   // 電話番号バリデーター（任意）
-  static Validator<String> optionalPhone() {
+  static StringValidator optionalPhone() {
     return StringValidator().phone();
   }
   
   // 税率バリデーター
-  static Validator<num> taxRate() {
+  static NumberValidator taxRate() {
     return NumberValidator()
         .required()
         .range(0, 1);
   }
   
   // ポイントバリデーター
-  static Validator<num> loyaltyPoints() {
+  static NumberValidator loyaltyPoints() {
     return NumberValidator()
         .required()
         .min(0)
