@@ -36,7 +36,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add),
-            onPressed: () => context.go('/customers/new'),
+            onPressed: () => context.go('/customers/add'),
             tooltip: '新規顧客追加',
           ),
         ],
@@ -57,7 +57,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/customers/new'),
+        onPressed: () => context.go('/customers/add'),
         icon: const Icon(Icons.person_add),
         label: const Text('新規顧客'),
       ),
@@ -209,7 +209,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   AppButton(
                     text: '最初の顧客を追加',
                     icon: Icons.person_add,
-                    onPressed: () => context.go('/customers/new'),
+                    onPressed: () => context.go('/customers/add'),
                   ),
                 ],
               ],
@@ -338,7 +338,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () => context.go('/customers/${customer.id}/edit'),
+                  onPressed: () => context.go('/customers/edit/${customer.id}'),
                   tooltip: '編集',
                 ),
                 IconButton(

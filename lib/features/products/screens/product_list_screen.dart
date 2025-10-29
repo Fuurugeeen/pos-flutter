@@ -38,7 +38,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add_box),
-            onPressed: () => context.go('/products/new'),
+            onPressed: () => context.go('/products/add'),
             tooltip: '新規商品追加',
           ),
         ],
@@ -61,7 +61,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/products/new'),
+        onPressed: () => context.go('/products/add'),
         icon: const Icon(Icons.add_box),
         label: const Text('新規商品'),
       ),
@@ -269,7 +269,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                   AppButton(
                     text: '最初の商品を追加',
                     icon: Icons.add_box,
-                    onPressed: () => context.go('/products/new'),
+                    onPressed: () => context.go('/products/add'),
                   ),
                 ],
               ],
@@ -441,7 +441,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () => context.go('/products/${product.id}/edit'),
+                  onPressed: () => context.go('/products/edit/${product.id}'),
                   tooltip: '編集',
                 ),
                 IconButton(
