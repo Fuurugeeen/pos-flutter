@@ -27,6 +27,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
   
   String searchQuery = '';
   Customer? selectedCustomer;
+  List<Customer> customerSearchResults = [];
   bool isProcessingPayment = false;
 
   @override
@@ -304,6 +305,40 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             ),
           ],
         ),
+        if (customerSearchResults.isNotEmpty && selectedCustomer == null) ...[
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: customerSearchResults.length,
+              itemBuilder: (context, index) {
+                final customer = customerSearchResults[index];
+                return ListTile(
+                  leading: Icon(
+                    Icons.person,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(customer.name),
+                  subtitle: Text('ポイント: ${customer.loyaltyPoints}'),
+                  onTap: () {
+                    setState(() {
+                      selectedCustomer = customer;
+                      customerSearchController.text = customer.name;
+                      customerSearchResults = [];
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+        ],
         if (selectedCustomer != null) ...[
           const SizedBox(height: 8),
           AppCard(
@@ -336,6 +371,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                     setState(() {
                       selectedCustomer = null;
                       customerSearchController.clear();
+                      customerSearchResults = [];
                     });
                   },
                 ),
@@ -526,14 +562,15 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     if (query.isEmpty) {
       setState(() {
         selectedCustomer = null;
+        customerSearchResults = [];
       });
       return;
     }
 
     final customersResult = await ref.read(customerRepositoryProvider).searchCustomers(query);
-    if (customersResult.isSuccess && customersResult.data != null && customersResult.data!.isNotEmpty) {
+    if (customersResult.isSuccess && customersResult.data != null) {
       setState(() {
-        selectedCustomer = customersResult.data!.first;
+        customerSearchResults = customersResult.data!;
       });
     }
   }
