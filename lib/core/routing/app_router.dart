@@ -8,6 +8,7 @@ import '../../features/members/screens/customer_list_screen.dart';
 import '../../features/members/screens/customer_edit_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/inventory/screens/inventory_screen.dart';
+import '../../features/receipts/screens/receipts_screen.dart';
 import '../layout/main_layout.dart';
 
 class AppRouter {
@@ -33,12 +34,12 @@ class AppRouter {
             builder: (context, state) => const ProductListScreen(),
             routes: [
               GoRoute(
-                path: '/add',
+                path: 'add',
                 name: 'product-add',
                 builder: (context, state) => const ProductEditScreen(),
               ),
               GoRoute(
-                path: '/edit/:id',
+                path: 'edit/:id',
                 name: 'product-edit',
                 builder: (context, state) {
                   final productId = state.pathParameters['id']!;
@@ -53,12 +54,12 @@ class AppRouter {
             builder: (context, state) => const CustomerListScreen(),
             routes: [
               GoRoute(
-                path: '/add',
+                path: 'add',
                 name: 'customer-add',
                 builder: (context, state) => const CustomerEditScreen(),
               ),
               GoRoute(
-                path: '/edit/:id',
+                path: 'edit/:id',
                 name: 'customer-edit',
                 builder: (context, state) {
                   final customerId = state.pathParameters['id']!;
@@ -76,6 +77,11 @@ class AppRouter {
             path: '/inventory',
             name: 'inventory',
             builder: (context, state) => const InventoryScreen(),
+          ),
+          GoRoute(
+            path: '/receipts',
+            name: 'receipts',
+            builder: (context, state) => const ReceiptsScreen(),
           ),
         ],
       ),
@@ -116,7 +122,8 @@ extension AppRouterExtension on BuildContext {
   void goToCustomers() => go('/customers');
   void goToReports() => go('/reports');
   void goToInventory() => go('/inventory');
-  
+  void goToReceipts() => go('/receipts');
+
   void goToProductAdd() => go('/products/add');
   void goToProductEdit(String productId) => go('/products/edit/$productId');
   void goToCustomerAdd() => go('/customers/add');

@@ -102,6 +102,13 @@ class _SideNavigation extends StatelessWidget {
                   onTap: () => context.goToCustomers(),
                 ),
                 _NavItem(
+                  icon: Icons.receipt_long,
+                  label: '伝票参照',
+                  path: '/receipts',
+                  isSelected: currentLocation == '/receipts',
+                  onTap: () => context.goToReceipts(),
+                ),
+                _NavItem(
                   icon: Icons.assessment,
                   label: 'レポート',
                   path: '/reports',
