@@ -4,7 +4,7 @@ abstract class Result<T> {
 
   // 成功の場合
   factory Result.success(T data) = Success<T>;
-  
+
   // 失敗の場合
   factory Result.failure(Exception error) = Failure<T>;
 
@@ -14,7 +14,7 @@ abstract class Result<T> {
 
   // データを取得（成功時のみ）
   T? get data => isSuccess ? (this as Success<T>).data : null;
-  
+
   // エラーを取得（失敗時のみ）
   Exception? get error => isFailure ? (this as Failure<T>).error : null;
 
@@ -59,7 +59,7 @@ abstract class Result<T> {
 class Success<T> extends Result<T> {
   @override
   final T data;
-  
+
   const Success(this.data);
 
   @override
@@ -79,7 +79,7 @@ class Success<T> extends Result<T> {
 class Failure<T> extends Result<T> {
   @override
   final Exception error;
-  
+
   const Failure(this.error);
 
   @override
@@ -117,14 +117,14 @@ class ResultUtils {
   // 複数のResultを結合（全て成功の場合のみ成功）
   static Result<List<T>> combine<T>(List<Result<T>> results) {
     final data = <T>[];
-    
+
     for (final result in results) {
       if (result.isFailure) {
         return Result.failure(result.error!);
       }
-      data.add(result.data!);
+      data.add(result.data as T);
     }
-    
+
     return Result.success(data);
   }
 
@@ -135,10 +135,10 @@ class ResultUtils {
         return result;
       }
     }
-    
+
     // 全て失敗の場合は最後のエラーを返す
-    return results.isNotEmpty 
-        ? results.last 
+    return results.isNotEmpty
+        ? results.last
         : Result.failure(Exception('No results provided'));
   }
 
@@ -156,7 +156,8 @@ class ResultUtils {
   }
 
   // 非同期のtry-catch を Result に変換
-  static Future<Result<T>> tryExecuteAsync<T>(Future<T> Function() operation) async {
+  static Future<Result<T>> tryExecuteAsync<T>(
+      Future<T> Function() operation) async {
     try {
       final result = await operation();
       return Result.success(result);
