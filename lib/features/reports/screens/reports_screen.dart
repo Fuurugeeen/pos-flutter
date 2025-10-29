@@ -55,6 +55,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+          indicatorColor: Theme.of(context).colorScheme.primary,
           tabs: const [
             Tab(icon: Icon(Icons.analytics), text: '概要'),
             Tab(icon: Icon(Icons.trending_up), text: '売上'),
