@@ -24,7 +24,7 @@ void main() async {
         enabled: !kReleaseMode, // 開発時のみ有効
         defaultDevice: Devices.ios.iPadPro13InchesM4,
         data: const DevicePreviewData(
-          orientation: Orientation.landscape,
+          orientation: Orientation.portrait,
         ),
         isToolbarVisible: true,
         builder: (context) => const MyApp(),
