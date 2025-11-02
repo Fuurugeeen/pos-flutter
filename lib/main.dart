@@ -23,6 +23,7 @@ void main() async {
       child: DevicePreview(
         enabled: !kReleaseMode, // 開発時のみ有効
         defaultDevice: Devices.ios.iPadPro11Inches,
+        isToolbarVisible: true,
         builder: (context) => const MyApp(),
       ),
     ),
