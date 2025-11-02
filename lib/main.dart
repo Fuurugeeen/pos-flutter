@@ -22,11 +22,7 @@ void main() async {
     ProviderScope(
       child: DevicePreview(
         enabled: !kReleaseMode, // 開発時のみ有効
-        defaultDevice: Devices.ios.iPadPro13InchesM4,
-        data: const DevicePreviewData(
-          orientation: Orientation.portrait,
-        ),
-        isToolbarVisible: true,
+        defaultDevice: Devices.ios.iPadPro11Inches,
         builder: (context) => const MyApp(),
       ),
     ),
