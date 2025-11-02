@@ -2,13 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
-    # releaseコミットメッセージの時のみデプロイ
-    paths-ignore:
-      - 'doc/**'
-      - '*.md'
-      - '.gitignore'
+    branches: [ main ]
+  workflow_dispatch:
 
 # 権限設定
 permissions:
@@ -22,12 +17,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # ビルドジョブ
   build:
     runs-on: ubuntu-latest
-    
-    # releaseコミットの時のみ実行
-    if: contains(github.event.head_commit.message, 'release')
+    if: contains(github.event.head_commit.message, 'release') || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout
@@ -36,7 +28,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
+          flutter-version: '3.27.2'
           channel: 'stable'
 
       - name: Install dependencies
@@ -51,17 +43,14 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'build/web'
+          path: ./build/web
 
-  # デプロイジョブ
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
     runs-on: ubuntu-latest
     needs: build
-    
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
