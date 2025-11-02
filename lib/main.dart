@@ -1,5 +1,4 @@
 import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -21,7 +20,7 @@ void main() async {
   runApp(
     ProviderScope(
       child: DevicePreview(
-        enabled: !kReleaseMode, // 開発時のみ有効
+        enabled: true,
         defaultDevice: Devices.ios.iPadPro11Inches,
         isToolbarVisible: true,
         builder: (context) => const MyApp(),
